@@ -30,7 +30,10 @@ in
       Type = "simple";
       ExecStart = lib.getExe bridge;
       WorkingDirectory = source;
-      Environment = [ "BRIDGE_FALLBACK=0" ];
+      Environment = [
+        "BRIDGE_FALLBACK=0"
+        "BRIDGE_OMNIROUTE_UPSTREAM=http://192.168.7.116"
+      ];
       Restart = "always";
       RestartSec = 5;
       TimeoutStopSec = 15;
