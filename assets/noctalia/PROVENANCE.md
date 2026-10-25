@@ -14,7 +14,7 @@ Read over SSH from `tay@work` on 2026-10-25. No remote files were modified.
   Manifest: `kenn/keybind-cheatsheet` 0.3.0, author kenn, license MIT, plugin API 9.
   Its optional thumbnail was not copied. Runtime binding caches were not copied.
 
-The adapted settings live in `modules/noctalia.nix`. The plugin is loaded from
+The adapted settings live in `home/noctalia.nix`. The plugin is loaded from
 the immutable Nix store; automatic plugin updates are disabled. Its modifier
 labels and configuration path describe this host, rather than work's Lua setup.
 Monitor-specific lockscreen coordinates, notification history, clipboard data,

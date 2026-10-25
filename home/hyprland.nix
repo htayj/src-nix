@@ -41,6 +41,10 @@ let
       hl.exec_cmd("${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE && ${pkgs.systemd}/bin/systemctl --user start manna-cadet-session.target")
       hl.exec_cmd("${lib.getExe pkgs.noctalia}")
     end)
+    -- The cheatsheet snapshots live binds; refresh after every config reload.
+    hl.on("config.reloaded", function()
+      hl.exec_cmd("${lib.getExe pkgs.noctalia} msg plugin kenn/keybind-cheatsheet:data all refresh")
+    end)
 
     hl.config({ general = { gaps_out = 10, layout = hy3 and "hy3" or "dwindle" }, input = {
       kb_file = "/etc/nixos-manna-cadet/spacecadet.xkb",
@@ -61,10 +65,13 @@ let
     hl.bind(mainMod .. " + l", focus("right"), { description = "Focus right" })
     hl.bind(mainMod .. " + k", focus("up"), { description = "Focus up" })
     hl.bind(mainMod .. " + j", focus("down"), { description = "Focus down" })
-    hl.bind(mainMod .. " + SHIFT + h", move("left"), { description = "Move window left" })
-    hl.bind(mainMod .. " + SHIFT + j", move("down"), { description = "Move window down" })
-    hl.bind(mainMod .. " + SHIFT + k", move("up"), { description = "Move window up" })
-    hl.bind(mainMod .. " + SHIFT + l", move("right"), { description = "Move window right" })
+    hl.bind(mainMod .. " + SHIFT + h", move("left"), { description = "Move window/group left" })
+    hl.bind(mainMod .. " + SHIFT + j", move("down"), { description = "Move window/group down" })
+    hl.bind(mainMod .. " + SHIFT + k", move("up"), { description = "Move window/group up" })
+    hl.bind(mainMod .. " + SHIFT + l", move("right"), { description = "Move window/group right" })
+    hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = "set" }), { description = "Restore tiled window" })
+
+    -- 3. hy3 splits and groups
     if hy3 then
       hl.bind(mainMod .. " + b", hy3.make_group("h"), { description = "Horizontal split" })
       hl.bind(mainMod .. " + v", hy3.make_group("v"), { description = "Vertical split" })
@@ -73,7 +80,7 @@ let
       hl.bind(mainMod .. " + a", hy3.change_focus("raise"), { description = "Select parent group" })
       hl.bind(mainMod .. " + SHIFT + a", hy3.change_focus("lower"), { description = "Select child" })
     end
-    hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = "set" }), { description = "Restore tiled window" })
+    -- 4. Layout switching
     -- Layout selection is session-local; reload restores hy3 as the default.
     if hy3 then
       hl.bind(mainMod .. " + F1", function() hl.config({ general = { layout = "hy3" } }) end, { description = "Layout: hy3" })
@@ -81,10 +88,10 @@ let
     hl.bind(mainMod .. " + F2", function() hl.config({ general = { layout = "dwindle" } }) end, { description = "Layout: dwindle" })
     hl.bind(mainMod .. " + F3", function() hl.config({ general = { layout = "master" } }) end, { description = "Layout: master" })
 
-    -- 3. Workspaces
+    -- 5. Workspaces
     ${workspaceBindings}
 
-    -- 4. Audio
+    -- 6. Audio
     hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg volume-up"), { locked = true, repeating = true, description = "Volume up" })
     hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg volume-down"), { locked = true, repeating = true, description = "Volume down" })
     hl.bind("XF86AudioMute", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg volume-mute"), { locked = true, repeating = true, description = "Mute audio" })

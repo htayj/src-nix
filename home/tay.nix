@@ -1,6 +1,6 @@
 { config, pkgs, autolith, ... }:
 {
-  imports = [ ./hyprland.nix ./noctalia.nix ./tmux.nix ./theme.nix ./workflow.nix ];
+  imports = [ ./hyprland.nix ./noctalia.nix ./tmux.nix ./theme.nix ./workflow.nix ./forgejo.nix ];
   home.username = "tay";
   home.homeDirectory = "/home/taylor";
   home.stateVersion = "26.05";

@@ -250,6 +250,12 @@ are adapted from `tay@work` (read-only inspection); see
 - Volume keys: Noctalia volume controls and on-screen display.
 - Idle: lock after five minutes, screen off after ten minutes.
 
+The cheatsheet uses live `hyprctl binds -j` data, not a second hand-maintained
+key list. Categories and descriptions come from `hyprland-settings.lua`,
+including hy3 splits/groups and F1–F3 layout switching. Each Hyprland config
+reload requests a fresh snapshot. To refresh manually, run
+`noctalia msg plugin kenn/keybind-cheatsheet:data all refresh`.
+
 The bar layout, soft panels, and dark Ayu Green palette follow work's settings.
 The captured palette and cheatsheet plugin are stored locally and pinned by the
 configuration. Plugin auto-updates are disabled. Noctalia provides notifications
@@ -295,8 +301,10 @@ Check authentication with `fj -H forge.nogroup.group whoami`.
 Credentials are stored only in `~/.local/share/forgejo-cli/keys.json` (0600,
 parent directory 0700), outside Nix and this repository. This does not change
 Tea's separate Gitea login or its host-specific Git credential helper.
-The `fj` API token does not automatically configure Git authentication;
-private HTTPS clones/pushes on Forgejo still need a Git credential helper.
+`git-credential-forgejo` reads the same external token for Git HTTPS access,
+and refuses requests for any other host or protocol. It is installed by Home
+Manager; enable it only for the intended host in Git's credential settings.
+It never embeds credentials in remotes or Nix-store files.
 
 ## Vaultwarden CLI
 
