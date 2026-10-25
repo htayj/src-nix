@@ -362,7 +362,11 @@ Inspect with `systemctl --user status bridge` and
 `systemctl --user restart bridge`. No model request is needed for the health check.
 Bridge retains usage and session transcripts under `~/.bridge` by default
 (up to 30 days / 4 GiB for sessions); treat that directory as private data.
-The service runs with umask 0077. No new boot-time lingering is enabled.
+The service runs with umask 0077 and restarts after five seconds on any exit,
+without a restart-rate cutoff. An explicit `systemctl --user stop bridge`
+still stops it. Lingering is enabled for `tay` with `loginctl enable-linger tay`,
+so user services start at boot and continue after logout. This is persistent
+machine state, not part of Home Manager; enable it separately on a new install.
 
 ## Autolith
 

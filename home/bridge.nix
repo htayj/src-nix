@@ -14,14 +14,15 @@ in
     Unit = {
       Description = "Bridge loopback model gateway";
       ConditionPathExists = "${source}/bin/bridge.ts";
+      StartLimitIntervalSec = 0;
     };
     Service = {
       Type = "simple";
       ExecStart = lib.getExe bridge;
       WorkingDirectory = source;
       Environment = [ "BRIDGE_FALLBACK=0" ];
-      Restart = "on-failure";
-      RestartSec = 2;
+      Restart = "always";
+      RestartSec = 5;
       TimeoutStopSec = 15;
       NoNewPrivileges = true;
       PrivateTmp = true;
