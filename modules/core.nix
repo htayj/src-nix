@@ -44,6 +44,7 @@
     gh
     gnupg
     pinentry-qt
+    herdr
     vim
     wget
     ripgrep
