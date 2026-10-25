@@ -4,6 +4,9 @@
 - System configuration is in `modules/` and `hosts/`; standalone Home Manager is
   in `home/`. Keep privileged services in NixOS and personal settings in Home Manager.
 - `tay@work` is read-only. Do not change files or services on that host.
+- Keep Bridge source in `/home/taylor/projects/bridge` and the Claude plugin
+  marketplace in `/home/taylor/claude-plugin-marketplace`, outside this repo.
+  Nix may declare runtimes/services referencing those paths, not vendor their code.
 - Never copy private keys, passphrases, tokens, or recovery material into this
   repository or Nix expressions. Do not print those values. Nix source is not secret.
 - Run `scripts/check-secrets` before any build/commit when new content is added;

@@ -342,6 +342,28 @@ Run `rbw login` locally and enter your master password in the pinentry dialog.
 Use `rbw sync` to refresh, `rbw unlock` when needed, and `rbw lock` to lock
 immediately. Never paste vault entries into chat, build logs, or Git.
 
+## Claude Code and Bridge
+
+Claude Code and plugin runtimes are installed in the home profile. Personal
+settings, marketplace files, memories, notes, and all credentials stay outside
+this repository and the Nix store.
+
+`~/projects/bridge` is a working-tree snapshot from `tay@work`, including its
+uncommitted source changes, with no Git metadata, credentials, node_modules,
+or runtime state. The `bridge` user service runs it with pinned nixpkgs Node 22
+(not the general-purpose Node version on PATH). Missing source prevents start.
+It listens only on loopback: gateway/UI port 8787 and log API port 8788.
+`BRIDGE_FALLBACK=0` matches work. It uses existing local provider credentials;
+no credentials were copied from work. Claude's mutable settings point to
+`http://127.0.0.1:8787`.
+
+Inspect with `systemctl --user status bridge` and
+`curl http://127.0.0.1:8787/api/hello`. Restart after source changes with
+`systemctl --user restart bridge`. No model request is needed for the health check.
+Bridge retains usage and session transcripts under `~/.bridge` by default
+(up to 30 days / 4 GiB for sessions); treat that directory as private data.
+The service runs with umask 0077. No new boot-time lingering is enabled.
+
 ## Autolith
 
 Autolith is installed from the personal fork `github:htayj/autolith`, pinned in
