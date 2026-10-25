@@ -208,6 +208,36 @@ settings. SDDM therefore also offers **Hyprland (manna-cadet)**; choose that
 session to use the complete `spacecadet.xkb` map. Hyprland is the login default; Plasma
 uses ordinary US XKB plus the Kanata device mappings.
 
+## hy3 tiling
+
+hy3 is the default layout, loaded from `pkgs.hyprlandPlugins.hy3` in the
+Lua config. This keeps the plugin tied to the same nixpkgs Hyprland build as
+the system; do not update it separately with hyprpm. If the plugin namespace
+is unavailable during loading, the config retains dwindle and basic movement.
+
+The manna-cadet map and Mod3 thumb modifier are unchanged, including held S/L
+as application Alt. Existing workspace 0–9 and application shortcuts remain.
+
+| Shortcut | Action |
+| --- | --- |
+| Thumb+hjkl | Focus left/down/up/right |
+| Thumb+Shift+hjkl | Move selected window/group |
+| Thumb+b / Thumb+v | Create horizontal / vertical split |
+| Thumb+w / Thumb+e | Tab / untab current group |
+| Thumb+a / Thumb+Shift+a | Select parent group / child |
+| Thumb+Shift+0–9 | Send selected window/group to workspace |
+| Thumb+F1 / F2 / F3 | Switch to hy3 / dwindle / master |
+
+Layout switches are session-local; reload restores hy3. Focus/move bindings
+select the appropriate commands for the active workspace's layout.
+
+`hyprland.lua` is a stable bootstrap that loads `hyprland-settings.lua` on every
+reload, avoiding Hyprland's startup canonicalization of Home Manager symlinks.
+Log out/in once after migrating to this bootstrap, then apply with `rbh`.
+Do not use `reload full-reset` with loaded plugins: it can crash the compositor.
+After updating nixpkgs, rebuild the system and restart Hyprland
+before loading plugins built for a newer compositor.
+
 ## Noctalia shell
 
 The Hyprland session starts Noctalia 5.3.0 from the locked nixpkgs. Its settings

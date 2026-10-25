@@ -7,13 +7,33 @@ let
       target = if workspace == 0 then "name:0" else number;
     in ''
       hl.bind(mainMod .. " + ${number}", hl.dsp.focus({ workspace = "${target}" }), { description = "Workspace ${number}" })
-      hl.bind(mainMod .. " + SHIFT + ${number}", hl.dsp.window.move({ workspace = "${target}" }), { description = "Send window to workspace ${number}" })
+      hl.bind(mainMod .. " + SHIFT + ${number}", chooseLayout(hy3 and hy3.move_to_workspace("${target}"), hl.dsp.window.move({ workspace = "${target}" })), { description = "Send window to workspace ${number}" })
     ''
   ) (lib.range 0 9);
 
   mannaHyprlandConfig = pkgs.writeText "manna-cadet-hyprland.lua" ''
     -- RALT is the dedicated Mod3 window-manager modifier. LALT stays normal Alt.
     local mainMod = "MOD3"
+    -- Use the plugin built against the same pinned nixpkgs Hyprland as NixOS.
+    -- Plugin loading can trigger another config pass; keep a usable fallback.
+    hl.plugin.load("${pkgs.hyprlandPlugins.hy3}/lib/libhy3.so")
+    local hy3 = hl.plugin.hy3
+    local function chooseLayout(hy3Action, standardAction)
+      return function()
+        local workspace = hl.get_active_workspace()
+        if hy3Action and workspace and workspace.tiled_layout == "hy3" then
+          hl.dispatch(hy3Action)
+        else
+          hl.dispatch(standardAction)
+        end
+      end
+    end
+    local function focus(direction)
+      return chooseLayout(hy3 and hy3.move_focus(direction), hl.dsp.focus({ direction = direction }))
+    end
+    local function move(direction)
+      return chooseLayout(hy3 and hy3.move_window(direction), hl.dsp.window.move({ direction = direction }))
+    end
     hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
     hl.env("NOCTALIA_CONFIG_HOME", "${config.xdg.configHome}")
     -- Portals require an active graphical session and the compositor environment.
@@ -22,7 +42,7 @@ let
       hl.exec_cmd("${lib.getExe pkgs.noctalia}")
     end)
 
-    hl.config({ general = { gaps_out = 10 }, input = {
+    hl.config({ general = { gaps_out = 10, layout = hy3 and "hy3" or "dwindle" }, input = {
       kb_file = "/etc/nixos-manna-cadet/spacecadet.xkb",
       repeat_delay = 660,
       repeat_rate = 25,
@@ -37,15 +57,29 @@ let
     -- 2. Windows and session
     hl.bind(mainMod .. " + C", hl.dsp.window.close(), { description = "Close window" })
     hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exit(), { description = "Log out" })
-    hl.bind(mainMod .. " + h", hl.dsp.focus({ direction = "left" }), { description = "Focus left" })
-    hl.bind(mainMod .. " + l", hl.dsp.focus({ direction = "right" }), { description = "Focus right" })
-    hl.bind(mainMod .. " + k", hl.dsp.focus({ direction = "up" }), { description = "Focus up" })
-    hl.bind(mainMod .. " + j", hl.dsp.focus({ direction = "down" }), { description = "Focus down" })
-    hl.bind(mainMod .. " + SHIFT + h", hl.dsp.window.move({ direction = "left" }), { description = "Move window left" })
-    hl.bind(mainMod .. " + SHIFT + j", hl.dsp.window.move({ direction = "down" }), { description = "Move window down" })
-    hl.bind(mainMod .. " + SHIFT + k", hl.dsp.window.move({ direction = "up" }), { description = "Move window up" })
-    hl.bind(mainMod .. " + SHIFT + l", hl.dsp.window.move({ direction = "right" }), { description = "Move window right" })
+    hl.bind(mainMod .. " + h", focus("left"), { description = "Focus left" })
+    hl.bind(mainMod .. " + l", focus("right"), { description = "Focus right" })
+    hl.bind(mainMod .. " + k", focus("up"), { description = "Focus up" })
+    hl.bind(mainMod .. " + j", focus("down"), { description = "Focus down" })
+    hl.bind(mainMod .. " + SHIFT + h", move("left"), { description = "Move window left" })
+    hl.bind(mainMod .. " + SHIFT + j", move("down"), { description = "Move window down" })
+    hl.bind(mainMod .. " + SHIFT + k", move("up"), { description = "Move window up" })
+    hl.bind(mainMod .. " + SHIFT + l", move("right"), { description = "Move window right" })
+    if hy3 then
+      hl.bind(mainMod .. " + b", hy3.make_group("h"), { description = "Horizontal split" })
+      hl.bind(mainMod .. " + v", hy3.make_group("v"), { description = "Vertical split" })
+      hl.bind(mainMod .. " + w", hy3.change_group("tab"), { description = "Tabbed group" })
+      hl.bind(mainMod .. " + e", hy3.change_group("untab"), { description = "Untab group" })
+      hl.bind(mainMod .. " + a", hy3.change_focus("raise"), { description = "Select parent group" })
+      hl.bind(mainMod .. " + SHIFT + a", hy3.change_focus("lower"), { description = "Select child" })
+    end
     hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = "set" }), { description = "Restore tiled window" })
+    -- Layout selection is session-local; reload restores hy3 as the default.
+    if hy3 then
+      hl.bind(mainMod .. " + F1", function() hl.config({ general = { layout = "hy3" } }) end, { description = "Layout: hy3" })
+    end
+    hl.bind(mainMod .. " + F2", function() hl.config({ general = { layout = "dwindle" } }) end, { description = "Layout: dwindle" })
+    hl.bind(mainMod .. " + F3", function() hl.config({ general = { layout = "master" } }) end, { description = "Layout: master" })
 
     -- 3. Workspaces
     ${workspaceBindings}
@@ -59,7 +93,12 @@ let
 in
 {
   home.packages = with pkgs; [ codex kdePackages.kate kitty pavucontrol rofi wl-clipboard zulip ];
-  xdg.configFile."hypr/hyprland.lua".source = mannaHyprlandConfig;
+  # Hyprland canonicalizes --config at startup. Keep this bootstrap immutable
+  # and follow the settings symlink afresh on every ordinary config reload.
+  xdg.configFile."hypr/hyprland.lua".text = ''
+    dofile("${config.xdg.configHome}/hypr/hyprland-settings.lua")
+  '';
+  xdg.configFile."hypr/hyprland-settings.lua".source = mannaHyprlandConfig;
   xdg.configFile."kitty/kitty.conf".text = ''
     remember_window_size no
   '';

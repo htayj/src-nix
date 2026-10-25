@@ -57,7 +57,7 @@ let
       [plugin_settings."kenn/keybind-cheatsheet"]
       compositor = "hyprland"
       hyprland_parser = "lua"
-      hyprland_lua_config = "${config.xdg.configHome}/hypr/hyprland.lua"
+      hyprland_lua_config = "${config.xdg.configHome}/hypr/hyprland-settings.lua"
       modifier_labels = { MOD3 = "Thumb", ALT = "Meta", SUPER = "Super", MOD2 = "Hyper", MOD5 = "Level3" }
     '';
     checkPhase = ''
