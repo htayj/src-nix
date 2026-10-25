@@ -5,6 +5,27 @@ boring: a thin flake, ordinary NixOS modules, one host directory, and the rollin
 `nixos-unstable` branch pinned by `flake.lock`. The unusual keyboard
 configuration is kept as its own module.
 
+## Remotes and mirror
+
+- Primary (`origin`): https://forge.nogroup.group/tay/src-nix — private.
+- GitHub mirror: https://github.com/htayj/src-nix — private.
+
+Push to Forgejo with `git push`; `master` tracks `origin/master`. Forgejo pushes
+to GitHub on every commit, with an eight-hour periodic sync as a fallback.
+This is a one-way Git mirror: make changes on Forgejo, not directly on GitHub.
+Issues, pull requests, and settings are not mirrored.
+
+The mirror uses a Forgejo-generated SSH key with write access only to the
+GitHub `src-nix` repository (deploy key). No GitHub account token was copied to
+Forgejo. This checkout's host-scoped credential helper uses the external `fj`
+token for HTTPS pushes to Forgejo; no credentials are stored in remote URLs.
+On another checkout, configure the helper with:
+
+```sh
+git config --local credential.https://forge.nogroup.group.helper ''
+git config --local --add credential.https://forge.nogroup.group.helper '!git-credential-forgejo'
+```
+
 ## Layout
 
 ```text
