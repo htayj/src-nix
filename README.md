@@ -385,6 +385,17 @@ An explicit `AUTOLITH_PROVIDER_ENDPOINT` environment override takes precedence.
 Restart clients to pick up these settings. Credentials remain outside Nix;
 these mutable client settings are documented here, not managed by Home Manager.
 
+Both clients register the read-only `bridge-usage` stdio MCP server in their
+mutable configs above. Home Manager installs `bridge-usage-mcp`, pinned to Node
+22 and the loopback log API on port 8788, and links the imported
+`~/.claude/skills/usage-review` into `~/.agents/skills/usage-review` for both
+clients. The skill source remains outside this repository and the Nix store.
+Ask for `usage-review` with a window such as `7d` to review usage, tool costs,
+context waste, slow requests, sessions, and individual request details.
+Restart clients after MCP configuration changes. Request details can contain
+private conversation text and are sent to the selected model when inspected;
+the analysis MCP cannot change gateway configuration.
+
 Inspect with `systemctl --user status bridge` and
 `curl http://127.0.0.1:8787/api/hello`. Restart after source changes with
 `systemctl --user restart bridge`. No model request is needed for the health check.
