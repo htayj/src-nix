@@ -1,0 +1,76 @@
+{
+  "capturedOn": "2026-10-23",
+  "purpose": "Byte-for-byte capture of basedbox's effective Advantage360 layered, PCsensor footswitch and Hyprland Space Cadet mappings for a prepared NixOS configuration; not an activated system change.",
+  "sourceWorkingTree": "/home/tay/src",
+  "sourceWorkingTreeHead": "87045207090acb0c1bc9b6ca222911717154b47e",
+  "sourceHeadMeaning": "Revision of the containing /home/tay/src repository, not a claim that the working-tree files are clean or an independent manna-cadet upstream revision. Fresh file hashes and agreement with effective immutable Guix files are authoritative.",
+  "upstream": "https://github.com/htayj/manna-cadet",
+  "attribution": {
+    "mannaCadet": "Copyright (c) 2026 htayj; MIT License copied as LICENSE for the Advantage360 and XKB assets.",
+    "footswitches": "Existing owner-provided dotfiles profile outside the manna-cadet directory. No separate license notice was found in the profile or at the dotfiles directory root; the manna-cadet MIT notice is not asserted to license this separate file."
+  },
+  "files": [
+    {
+      "vendored": "kinesis.advantage360.layered.kanata.kbd",
+      "source": "/home/tay/src/dotfiles/keyboard/manna-cadet/kanata/kinesis.advantage360.layered.kanata.kbd",
+      "sha256": "9e744b8e5da6606cdf082e8fc1da1b50c4470017c4589df91c1487a27af4b6d5",
+      "effectivePath": "/home/tay/kinesis.advantage360.layered.kanata.kbd",
+      "effectiveResolvedPath": "/gnu/store/1qxxa2lvjxs17fchk8b0ljh9iyslk37n-home-dotfiles-kinesis-advantage360-layered-kanata-kbd",
+      "runningProcessConfig": "/gnu/store/l76wb5kcpjxyjkryjx7b51wjymk2x6hl-kanata-advantage360",
+      "runningProcessConfigSha256": "9e744b8e5da6606cdf082e8fc1da1b50c4470017c4589df91c1487a27af4b6d5",
+      "device": "/dev/input/by-id/usb-Kinesis_Kinesis_Adv360_360555127546-if01-event-kbd",
+      "outputDeviceName": "ivory-key-manna-advantage360"
+    },
+    {
+      "vendored": "footswitches.kanata.kbd",
+      "source": "/home/tay/src/dotfiles/keyboard/footswitches.kanata.kbd",
+      "sha256": "b88c37da5bae675ad5577d085b78cc8aa0d0a4e4de0f91ed61b8fb0c0ec9a1a3",
+      "effectivePath": "/home/tay/footswitches.kanata.kbd",
+      "effectiveResolvedPath": "/gnu/store/8fil7axnfflvv31bjk08w2nnmmkw5lmx-home-dotfiles-footswitches-kanata-kbd",
+      "effectiveLauncherConfig": "/gnu/store/fdy1cap3qxy7fncjp98qwqaddxrflhw3-kanata-footswitches",
+      "effectiveLauncherConfigSha256": "b88c37da5bae675ad5577d085b78cc8aa0d0a4e4de0f91ed61b8fb0c0ec9a1a3",
+      "observedState": "Guile launcher waiting for PCsensor FootSwitch Keyboard; not an active Kanata footswitch process during capture.",
+      "deviceNameInclude": "PCsensor FootSwitch Keyboard",
+      "outputDeviceName": "kanata (upstream default, not overridden by the captured profile)",
+      "actualMapping": "ralt/f24/menu/rmet -> f1/f2/f3/f4. Existing fs1-fs4 aliases are unused; preserve that actual behavior, not the profile comment's older sentinel example."
+    },
+    {
+      "vendored": "spacecadet.xkb",
+      "source": "/home/tay/src/dotfiles/keyboard/manna-cadet/xkb/keymap/spacecadet.xkb",
+      "sha256": "c0414310418749a438e5527d7154a2c3357d7ef455e57be8b01d19cd250e5d9f",
+      "effectivePath": "/home/tay/.config/xkb/keymap/spacecadet.xkb",
+      "effectiveResolvedPath": "/gnu/store/8fqizw8gg6nhif1lbcxii68rhycpgbj4-home-dotfiles--config-xkb-keymap-spacecadet-xkb",
+      "nixosPath": "/etc/nixos-manna-cadet/spacecadet.xkb",
+      "includes": ["keycodes:evdev+aliases(qwerty)", "types:complete", "compatibility:complete", "symbols:pc+us", "geometry:pc(pc105)"],
+      "includeProvider": "Stock xkeyboard-config includes provided by the NixOS Hyprland/libxkbcommon closure; no manna-cadet custom rules/symbol includes are referenced."
+    },
+    {
+      "vendored": "LICENSE",
+      "source": "/home/tay/src/dotfiles/keyboard/manna-cadet/LICENSE",
+      "sha256": "8f4b17c9ad854277f92585d9e472927541ac343a1f69c2b56bc5fceb7f171607"
+    }
+  ],
+  "runtimeAdaptation": {
+    "profileChanges": "Only insert linux-continue-if-no-devs-found yes immediately after defcfg in generated immutable runtime copies. Vendored profiles remain unchanged.",
+    "reason": "Native Kanata hotplug waiting supports absent physical devices on the installer/VM without intercepting unrelated keyboards or blocking desktop login. Syntax errors remain fatal in generated-config checkPhase and service startup.",
+    "services": ["kanata-advantage360.service", "kanata-footswitches.service"],
+    "permissions": "NixOS services.kanata native hardened DynamicUser with input/uinput supplementary groups and device allow rules. No added tay input/uinput membership or broad chmod rules.",
+    "restart": "on-failure, 30 seconds, up to 3 starts within 300 seconds. Normal emergency exit remains stopped. No desktop-login dependency.",
+    "extraArgs": ["--no-wait"],
+    "nativeWarning": "The native module may warn about footswitches.devices=[] with multiple profiles; its generic warning does not parse full configFile. The captured linux-dev-names-include filter excludes the Advantage360, so there is no wildcard grab."
+  },
+  "preservedSemantics": [
+    "Advantage360 process-unmapped-keys no, concurrent-tap-hold yes and all arbitrary-code actions, local Linux key numbers, base/fun layers and tap-hold-release timings (200ms except a at 250ms).",
+    "Thumb backspace/space holds emit ralt; End/PgDn holds enter fun. Footswitch process-unmapped-keys yes and exact all-device name matching are unchanged.",
+    "XKB physical RALT=Alt_L/Mod1; LALT=Meta_L/Mod3; RWIN=Hyper_L/Mod2; LWIN=Super_L/Mod4; LVL3=Mode_switch; ZEHA=ISO_Level3_Shift/Mod5. Compositor mainMod must remain ALT, not the historical Mod3 proposal.",
+    "Full Greek/top/math and private-use command keysyms unchanged. No new compositor command bindings are implied; applications consume these symbols as before."
+  ],
+  "verificationAndLimits": {
+    "performed": "Read canonical profiles, exact deployed immutable files and process command lines; SHA-256 canonical files matched effective home symlink contents and running/launcher config copies. No current remapper was restarted.",
+    "notPerformedBySlice": "No Nix evaluation/build, tests, lint, format, runtime keyboard grab, XKB compilation or physical typing smoke. Integration owner must perform the single integrated smoke.",
+    "packageCompatibility": "Observed current running Kanata is 1.12.0; pinned nixpkgs 26.05 supplies 1.11.0. Generated-config checkPhase checks actual selected package syntax. Parser success alone is not proof of identical tap-hold runtime behavior across versions; physical typing acceptance remains required.",
+    "historicalHashes": "The earlier mapping scout quoted frozen ivory-key baseline hashes, not fresh current hashes; those do not supersede this capture."
+  },
+  "nativeModuleReference": "https://raw.githubusercontent.com/NixOS/nixpkgs/da6dc0e7b26060f2f71ce3ef7088fb56ee44fa36/nixos/modules/services/hardware/kanata.nix",
+  "absenceAndHotplugReference": "https://raw.githubusercontent.com/jtroo/kanata/v1.11.0/src/oskbd/linux.rs"
+}

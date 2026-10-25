@@ -1,0 +1,14 @@
+/result
+/result-*
+
+# Local credentials and recovery material never belong in this repository.
+.env
+.env.*
+.gnupg/
+.ssh/
+agent-signing/
+gpg-recovery-*/
+*.key
+*.pem
+*.p12
+*.pfx

@@ -41,10 +41,8 @@
 
   environment.systemPackages = with pkgs; [
     git
-    gh
     gnupg
     pinentry-qt
-    herdr
     vim
     wget
     ripgrep

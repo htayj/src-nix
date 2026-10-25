@@ -1,0 +1,47 @@
+#| --------------------------------------------------------------------------
+
+                         kanata: PCsensor FootSwitches
+
+   Separate profile from the Kinesis configs so the keyboard remapper keeps
+   working when these pedals are unplugged.
+
+   This profile grabs every connected input named "PCsensor FootSwitch
+   Keyboard". That avoids the unstable /dev/input/by-id symlink these pedals
+   expose when several identical units are connected.
+
+   Rebinding:
+   - `defsrc' is the key each pedal's firmware currently emits.
+   - `defalias' is the output you want from each pedal.
+   - The default assumes the pedals have been programmed once to emit F13-F16
+     as neutral sentinel keys. If the firmware currently emits other keys,
+     update `defsrc' once; future rebinding only needs alias changes.
+
+   Note: a single grouped kanata config cannot distinguish two pedals that
+   emit the exact same source key. If that happens, either program unique
+   sentinel keys once, or split the pedals into per-USB-port services.
+
+  -------------------------------------------------------------------------- |#
+
+(defsrc
+  ralt f24 menu rmet
+)
+
+(defalias
+  ;; Edit these four aliases to rebind the foot switches without opening the
+  ;; firmware flasher. Examples: `mute', `volu', `vold', `lctl', `S-f13'.
+  fs1 kp1
+  fs2 f14
+  fs3 f15
+  fs4 f16
+)
+
+(deflayer base
+  f1 f2 f3 f4
+)
+
+(defcfg
+  linux-dev-names-include (
+    "PCsensor FootSwitch Keyboard"
+  )
+  process-unmapped-keys yes
+)

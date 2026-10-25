@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+old_user=taylor
+new_user=tay
+expected_uid=1000
+expected_home=/home/taylor
+
+repo_dir=${NIXOS_CONFIG_DIR:-/home/taylor/src}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+[[ $EUID -eq 0 ]] || die "run this script as root from a root login"
+[[ -f $repo_dir/flake.nix ]] ||
+  die "no flake.nix at $repo_dir (override with NIXOS_CONFIG_DIR)"
+
+if [[ ${SUDO_USER-} == "$old_user" ]]; then
+  die "do not run this from a sudo shell owned by $old_user; log out and use a root text-console login"
+fi
+
+old_entry=$(getent passwd "$old_user" || true)
+new_entry=$(getent passwd "$new_user" || true)
+
+if [[ -n $old_entry && -n $new_entry ]]; then
+  die "both $old_user and $new_user already exist; resolve the account collision manually"
+fi
+
+if [[ -n $old_entry ]]; then
+  old_uid=$(cut -d: -f3 <<<"$old_entry")
+  old_home=$(cut -d: -f6 <<<"$old_entry")
+  [[ $old_uid == "$expected_uid" ]] ||
+    die "$old_user has UID $old_uid, expected $expected_uid"
+  [[ $old_home == "$expected_home" ]] ||
+    die "$old_user has home $old_home, expected $expected_home"
+
+  if pgrep -u "$old_user" >/dev/null; then
+    printf '%s still has running processes:\n' "$old_user" >&2
+    ps -u "$old_user" -o pid=,tty=,stat=,comm= >&2 || true
+    die "log out fully (or run 'loginctl terminate-user $old_user' from the root console), then rerun this script"
+  fi
+
+  printf 'Renaming login %s to %s; keeping %s...\n' \
+    "$old_user" "$new_user" "$expected_home"
+  usermod --login "$new_user" "$old_user"
+else
+  [[ -n $new_entry ]] || die "neither $old_user nor $new_user exists"
+  printf 'Login is already named %s; skipping rename.\n' "$new_user"
+fi
+
+# Ensure the intended administrator memberships even if usermod or an earlier
+# partial migration left the supplementary group database inconsistent.
+usermod --append --groups wheel,networkmanager "$new_user"
+
+new_entry=$(getent passwd "$new_user")
+new_uid=$(cut -d: -f3 <<<"$new_entry")
+new_home=$(cut -d: -f6 <<<"$new_entry")
+[[ $new_uid == "$expected_uid" ]] ||
+  die "$new_user has UID $new_uid after rename, expected $expected_uid"
+[[ $new_home == "$expected_home" ]] ||
+  die "$new_user has home $new_home after rename, expected $expected_home"
+
+printf 'Account after rename:\n'
+id "$new_user"
+getent passwd "$new_user"
+
+printf 'Switching NixOS using %s...\n' "$repo_dir"
+nixos-rebuild switch \
+  --flake "path:$repo_dir#nixos" \
+  --option experimental-features 'nix-command flakes'
+
+printf '\nDone. Log in as %s; the home directory remains %s.\n' \
+  "$new_user" "$expected_home"

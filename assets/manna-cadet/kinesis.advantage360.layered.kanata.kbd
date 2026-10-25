@@ -1,0 +1,41 @@
+(defcfg
+  linux-dev /dev/input/by-id/usb-Kinesis_Kinesis_Adv360_360555127546-if01-event-kbd
+  linux-output-device-name "ivory-key-manna-advantage360"
+  process-unmapped-keys no
+  concurrent-tap-hold yes)
+
+(deflocalkeys-linux
+  k18 127
+  k19 130
+  k20 115
+  k21 142
+)
+
+(defsrc
+  a ' b \ bspc c lshift rshift , lalt d del rmet down e end esc f g grv lctl h home k18 k19 k20 k21 i j k l left [ m caps n 0 1 2 3 4 5 6 7 8 9 = - o p pgup . pgdn q r ent right ] s ; / spc t tab rctl u up v w x y z)
+
+(defalias
+  cd (tap-hold-release 200 200 d lctl)
+  ck (tap-hold-release 200 200 k lctl)
+  eoam (tap-hold-release 200 200 esc rmet)
+  gdel (tap-hold-release 200 200 del (arbitrary-code 85))
+  hro (tap-hold-release 200 200 bspc ralt)
+  hscl (tap-hold-release 200 200 end (layer-while-held fun))
+  hscr (tap-hold-release 200 200 pgdn (layer-while-held fun))
+  hsp (tap-hold-release 200 200 spc ralt)
+  ml (tap-hold-release 200 200 l lalt)
+  ms (tap-hold-release 200 200 s lalt)
+  qoam (tap-hold-release 200 200 ' rmet)
+  rtop (tap-hold-release 200 200 ent (arbitrary-code 84))
+  sa (tap-hold-release 250 250 a lmet)
+  sf (tap-hold-release 200 200 f lshift)
+  sj (tap-hold-release 200 200 j lshift)
+  ssemi (tap-hold-release 200 200 ; lmet)
+)
+
+(deflayer manna-cadet
+  @sa @qoam b \ @hro c lshift rshift , lalt @cd @gdel rmet down e @hscl @eoam @sf g grv (arbitrary-code 85) h home f18 f19 f20 f21 i @sj @ck @ml left [ m caps n 0 1 2 3 4 5 6 7 8 9 = - o p pgup . @hscr q r @rtop right ] @ms @ssemi / @hsp t tab (arbitrary-code 84) u up v w x y z)
+
+
+(deflayer fun
+  _ _ _ _ _ (arbitrary-code 192) _ _ _ _ _ _ _ _ (arbitrary-code 183) _ _ _ (arbitrary-code 191) (arbitrary-code 212) _ (arbitrary-code 199) _ _ _ _ _ (arbitrary-code 194) (arbitrary-code 198) (arbitrary-code 187) (arbitrary-code 188) _ _ (arbitrary-code 193) (arbitrary-code 211) _ (arbitrary-code 225) (arbitrary-code 218) (arbitrary-code 219) (arbitrary-code 220) (arbitrary-code 221) _ _ (arbitrary-code 222) (arbitrary-code 223) (arbitrary-code 224) _ _ (arbitrary-code 190) _ _ (arbitrary-code 226) _ (arbitrary-code 185) _ _ _ _ (arbitrary-code 195) (arbitrary-code 240) _ _ (arbitrary-code 186) _ _ (arbitrary-code 197) _ _ (arbitrary-code 184) (arbitrary-code 196) _ (arbitrary-code 189))
