@@ -242,12 +242,16 @@ as application Alt. Existing workspace 0–9 and application shortcuts remain.
 | Shortcut | Action |
 | --- | --- |
 | Thumb+hjkl | Focus left/down/up/right |
+| Thumb+n / Thumb+p | Next / previous tab (wraps) |
 | Thumb+Shift+hjkl | Move selected window/group |
 | Thumb+b / Thumb+v | Create horizontal / vertical split |
 | Thumb+w / Thumb+e | Tab / untab current group |
 | Thumb+a / Thumb+Shift+a | Select parent group / child |
 | Thumb+Shift+0–9 | Send selected window/group to workspace |
 | Thumb+F1 / F2 / F3 | Switch to hy3 / dwindle / master |
+
+In hy3, Thumb+h/l move between visible windows without selecting hidden tabs;
+use Thumb+n/p to change tabs. Shift+hjkl window/group movement is unchanged.
 
 Layout switches are session-local; reload restores hy3. Focus/move bindings
 select the appropriate commands for the active workspace's layout.

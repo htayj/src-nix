@@ -29,7 +29,7 @@ let
       end
     end
     local function focus(direction)
-      return chooseLayout(hy3 and hy3.move_focus(direction), hl.dsp.focus({ direction = direction }))
+      return chooseLayout(hy3 and hy3.move_focus(direction, { visible = direction == "left" or direction == "right" }), hl.dsp.focus({ direction = direction }))
     end
     local function move(direction)
       return chooseLayout(hy3 and hy3.move_window(direction), hl.dsp.window.move({ direction = direction }))
@@ -73,6 +73,8 @@ let
 
     -- 3. hy3 splits and groups
     if hy3 then
+      hl.bind(mainMod .. " + n", hy3.focus_tab({ direction = "right", wrap = true }), { description = "Next tab" })
+      hl.bind(mainMod .. " + p", hy3.focus_tab({ direction = "left", wrap = true }), { description = "Previous tab" })
       hl.bind(mainMod .. " + b", hy3.make_group("h"), { description = "Horizontal split" })
       hl.bind(mainMod .. " + v", hy3.make_group("v"), { description = "Vertical split" })
       hl.bind(mainMod .. " + w", hy3.change_group("tab"), { description = "Tabbed group" })
