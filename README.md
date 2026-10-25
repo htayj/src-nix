@@ -235,13 +235,23 @@ retains only the privileged Bluetooth, power, and networking integrations.
 
 Tea is installed in the home profile. On this machine, the default login
 `nogroup` connects to `https://git.nogroup.group` as `tay`, authenticating with
-the existing SSH key. Its mutable login file lives in `~/.config/tea/config.yml`
-(mode 0600), outside this repository. No API token or private key is stored here.
+the dedicated `nixos-tea-kube-https-20261025` token. Its scopes are
+`write:repository` and `read:user`, allowing repository reads/pushes and login
+verification but not administrative API operations. These scopes apply to all
+repositories the account can access, not just `tay/kube`.
+Its mutable login file lives in `~/.config/tea/config.yml` (mode 0600), outside
+this repository and Nix. No API token or private key is stored here.
 
-Check authentication with `tea whoami`. Tea 0.16.0's `login status` assumes a
-token and its generic `api` command does not use SSH authentication; those may
-fail even while normal SDK-backed commands work. HTTPS Git credential helper
-setup was not enabled; continue using SSH Git remotes.
+The legacy Gitea is used for the Kubernetes cluster; its advertised SSH port
+422 refuses connections, so the Tea login has no SSH key selected and clones
+over HTTPS. Git's host-scoped credential helper is `!tea login helper` for
+`https://git.nogroup.group`. It reads the token from Tea's private config; Git
+remote URLs contain no credentials. This runtime setup survives `rbh`.
+
+Check authentication with `tea login status nogroup` or `tea whoami`.
+`tay/kube` is cloned at `~/projects/kube`, with an HTTPS origin. The cluster's
+Flux credentials and deploy keys were not changed. The newer Forgejo service
+is separate and is not configured by this login.
 
 ## Vaultwarden CLI
 
