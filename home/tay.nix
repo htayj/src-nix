@@ -19,6 +19,11 @@
   home.sessionPath = [ "${config.home.profileDirectory}/bin" ];
   home.packages = with pkgs; [
     claude-code
+    # Runtimes for the Claude plugins and hooks imported from work.
+    nodejs
+    uv
+    python3
+    libnotify
     gh
     tea
     forgejo-cli
