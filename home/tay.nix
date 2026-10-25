@@ -13,7 +13,9 @@
       base_url = "https://vault.nogroup.group";
       email = "hardy.taylor.j@gmail.com";
       pinentry = pkgs.pinentry-qt;
-      lock_timeout = 300;
+      # rbw rejects 0. About 136 years is effectively manual-lock-only,
+      # without using u64::MAX (which can overflow timer calculations).
+      lock_timeout = 4294967295;
     };
   };
   home.sessionPath = [ "${config.home.profileDirectory}/bin" ];

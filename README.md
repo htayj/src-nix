@@ -334,7 +334,11 @@ It never embeds credentials in remotes or Nix-store files.
 ## Vaultwarden CLI
 
 `rbw` is installed and configured by Home Manager for
-`https://vault.nogroup.group`, using Qt pinentry and a five-minute unlock cache.
+`https://vault.nogroup.group`, using Qt pinentry and a 4,294,967,295-second
+unlock cache (about 136 years: effectively manual-lock-only). rbw rejects zero
+as a timeout. Screen locking does not lock rbw; use `rbw lock` explicitly.
+Rebooting or stopping the agent clears the in-memory keys. After changing the
+timeout, restart the agent with `rbw stop-agent`, then run `rbw unlock` again.
 Only the server URL and account email are in Nix. Master passwords, tokens,
 and the encrypted local vault remain outside the repository and Nix store.
 
@@ -348,14 +352,38 @@ Claude Code and plugin runtimes are installed in the home profile. Personal
 settings, marketplace files, memories, notes, and all credentials stay outside
 this repository and the Nix store.
 
-`~/projects/bridge` is a working-tree snapshot from `tay@work`, including its
-uncommitted source changes, with no Git metadata, credentials, node_modules,
-or runtime state. The `bridge` user service runs it with pinned nixpkgs Node 22
+`~/projects/bridge` was imported as a working-tree snapshot from `tay@work`,
+including uncommitted source changes, without credentials, node_modules, or
+runtime state. It now has its own signed Git history and private Forgejo origin
+`https://forge.nogroup.group/tay/bridge.git` (branch `main`). The separate
+`~/claude-plugin-marketplace` checkout uses private
+`https://forge.nogroup.group/tay/claude-plugin-marketplace.git` (branch `master`).
+Neither source tree is vendored here. The `bridge` user service runs with pinned nixpkgs Node 22
 (not the general-purpose Node version on PATH). Missing source prevents start.
 It listens only on loopback: gateway/UI port 8787 and log API port 8788.
 `BRIDGE_FALLBACK=0` matches work. It uses existing local provider credentials;
 no credentials were copied from work. Claude's mutable settings point to
 `http://127.0.0.1:8787`.
+
+Codex's mutable `~/.codex/config.toml` selects `model_provider = "bridge"`:
+
+```toml
+[model_providers.bridge]
+name = "Local Bridge"
+base_url = "http://127.0.0.1:8787/codex"
+wire_api = "responses"
+requires_openai_auth = true
+supports_websockets = false
+```
+
+This keeps the existing ChatGPT login and uses HTTP streaming (Bridge does not
+proxy WebSockets). The model and other Codex settings remain unchanged.
+Autolith's mutable `~/.config/autolith/init.lisp` sets
+`*codex-responses-endpoint*` to `http://127.0.0.1:8787/codex/responses`.
+This affects only its Codex family; OmniRoute and other providers are unchanged.
+An explicit `AUTOLITH_PROVIDER_ENDPOINT` environment override takes precedence.
+Restart clients to pick up these settings. Credentials remain outside Nix;
+these mutable client settings are documented here, not managed by Home Manager.
 
 Inspect with `systemctl --user status bridge` and
 `curl http://127.0.0.1:8787/api/hello`. Restart after source changes with
