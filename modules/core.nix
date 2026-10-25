@@ -34,10 +34,16 @@
   environment.shellAliases.rbs =
     "sudo nixos-rebuild switch --flake path:/home/taylor/src#nixos";
 
+  programs.gnupg.agent = {
+    enable = true;
+    pinentryPackage = pkgs.pinentry-qt;
+  };
+
   environment.systemPackages = with pkgs; [
     git
     gh
     gnupg
+    pinentry-qt
     vim
     wget
     ripgrep
