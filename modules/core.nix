@@ -37,6 +37,7 @@
   environment.systemPackages = with pkgs; [
     git
     gh
+    gnupg
     vim
     wget
     ripgrep
