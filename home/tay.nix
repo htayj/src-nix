@@ -18,6 +18,7 @@
   };
   home.sessionPath = [ "${config.home.profileDirectory}/bin" ];
   home.packages = with pkgs; [
+    claude-code
     gh
     tea
     forgejo-cli
