@@ -231,6 +231,29 @@ are saved separately in `~/.local/state/noctalia/settings.toml` and override the
 declarative defaults. Use `rbh` to apply declarative changes. The system module
 retains only the privileged Bluetooth, power, and networking integrations.
 
+## Gitea CLI
+
+Tea is installed in the home profile. On this machine, the default login
+`nogroup` connects to `https://git.nogroup.group` as `tay`, authenticating with
+the existing SSH key. Its mutable login file lives in `~/.config/tea/config.yml`
+(mode 0600), outside this repository. No API token or private key is stored here.
+
+Check authentication with `tea whoami`. Tea 0.16.0's `login status` assumes a
+token and its generic `api` command does not use SSH authentication; those may
+fail even while normal SDK-backed commands work. HTTPS Git credential helper
+setup was not enabled; continue using SSH Git remotes.
+
+## Vaultwarden CLI
+
+`rbw` is installed and configured by Home Manager for
+`https://vault.nogroup.group`, using Qt pinentry and a five-minute unlock cache.
+Only the server URL and account email are in Nix. Master passwords, tokens,
+and the encrypted local vault remain outside the repository and Nix store.
+
+Run `rbw login` locally and enter your master password in the pinentry dialog.
+Use `rbw sync` to refresh, `rbw unlock` when needed, and `rbw lock` to lock
+immediately. Never paste vault entries into chat, build logs, or Git.
+
 ## Autolith
 
 Autolith is installed from the personal fork `github:htayj/autolith`, pinned in

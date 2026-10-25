@@ -7,9 +7,19 @@
   xdg.enable = true;
   programs.home-manager.enable = true;
   programs.bash.enable = true;
+  programs.rbw = {
+    enable = true;
+    settings = {
+      base_url = "https://vault.nogroup.group";
+      email = "hardy.taylor.j@gmail.com";
+      pinentry = pkgs.pinentry-qt;
+      lock_timeout = 300;
+    };
+  };
   home.sessionPath = [ "${config.home.profileDirectory}/bin" ];
   home.packages = with pkgs; [
     gh
+    tea
     herdr
     gitleaks
     autolith.packages.${pkgs.stdenv.hostPlatform.system}.default
