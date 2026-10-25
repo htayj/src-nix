@@ -253,6 +253,21 @@ Check authentication with `tea login status nogroup` or `tea whoami`.
 Flux credentials and deploy keys were not changed. The newer Forgejo service
 is separate and is not configured by this login.
 
+## Forgejo CLI
+
+`forgejo-cli` is installed in the home profile as `fj`. Its separate login for
+`forge.nogroup.group` authenticates as `tay` using the dedicated
+`nixos-fj-20261025` token. Scopes are `write:repository`, `write:issue`,
+`read:user`, `read:organization`, and `read:notification`; server administration
+is not enabled. Clone URLs default to HTTPS.
+
+Check authentication with `fj -H forge.nogroup.group whoami`.
+Credentials are stored only in `~/.local/share/forgejo-cli/keys.json` (0600,
+parent directory 0700), outside Nix and this repository. This does not change
+Tea's separate Gitea login or its host-specific Git credential helper.
+The `fj` API token does not automatically configure Git authentication;
+private HTTPS clones/pushes on Forgejo still need a Git credential helper.
+
 ## Vaultwarden CLI
 
 `rbw` is installed and configured by Home Manager for

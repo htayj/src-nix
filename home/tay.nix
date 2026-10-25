@@ -20,6 +20,7 @@
   home.packages = with pkgs; [
     gh
     tea
+    forgejo-cli
     herdr
     gitleaks
     autolith.packages.${pkgs.stdenv.hostPlatform.system}.default
