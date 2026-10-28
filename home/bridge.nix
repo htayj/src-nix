@@ -16,6 +16,7 @@ let
   };
 in
 {
+  imports = [ ./donk.nix ];
   home.packages = [ bridge bridgeUsage ];
   # Share the imported skill without copying its source into the Nix store.
   home.file.".agents/skills/usage-review".source =

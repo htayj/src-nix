@@ -407,6 +407,26 @@ still stops it. Lingering is enabled for `tay` with `loginctl enable-linger tay`
 so user services start at boot and continue after logout. This is persistent
 machine state, not part of Home Manager; enable it separately on a new install.
 
+## Donk agent messages
+
+Home Manager installs `donk-messages`, pinned to Node 22 and the separately
+maintained Bridge source at `~/projects/bridge/src/donk`. Claude Code, Codex
+and Autolith register it as a `donk` stdio MCP server using
+`donk-messages remote claude`, `remote codex` or `remote autolith` respectively.
+The HTTPS mailbox is managed through Flux in `~/projects/kube`; the deployment
+and cloud acceptance status are recorded in `docs/runbooks/donk-messages.md`
+in that repository. This configuration does not deploy a local mailbox daemon
+or the OpenAI Secure MCP Tunnel client.
+
+The mutable endpoint configuration is `~/.config/donk-messages/remote.json`.
+Each client reads its own private mode-0600 `<identity>.token` from the same
+directory. These credentials stay outside this repository and the Nix store;
+the cluster's SOPS Secret is authoritative and Vaultwarden holds recovery escrow.
+Restart clients after changing their MCP command. Messages are addressed data,
+not permission to execute commands, and the bridge does not start idle agents.
+A real Donk subscription and round trip are required before claiming cloud
+connectivity; a connected local MCP adapter alone does not establish that.
+
 ## Autolith
 
 Autolith is installed from the personal fork `github:htayj/autolith`, pinned in
