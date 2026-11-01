@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+set -euo pipefail
+mode=${1:-runtime}
+[[ "$mode" == runtime || "$mode" == autolith ]] || {
+  echo "Usage: $0 [runtime|autolith]" >&2; exit 2;
+}
+for cmd in curl jq ss systemctl; do command -v "$cmd" >/dev/null; done
+get() { curl --fail --silent --show-error --max-time 5 "$@"; }
+wait_for() {
+  local attempt
+  for attempt in {1..60}; do
+    if "$@"; then return 0; fi
+    sleep 2
+  done
+  echo "Timed out waiting for local telemetry" >&2; return 1
+}
+ready() {
+  get http://127.0.0.1:3200/ready >/dev/null 2>&1 &&
+    get http://127.0.0.1:3000/api/health 2>/dev/null | jq -e '.database == "ok"' >/dev/null
+}
+wait_for ready
+for unit in tempo grafana; do
+  systemctl --user is-active --quiet "$unit"
+  systemctl --user is-enabled --quiet "$unit"
+  pid=$(systemctl --user show "$unit" -p MainPID --value)
+  # Inspect every TCP/UDP listener owned by either service, not just UI ports.
+  sockets=$(ss -H -lntup | grep "pid=$pid," || true)
+  [[ -n "$sockets" ]]
+  if printf '%s\n' "$sockets" | awk '$5 !~ /^127\.0\.0\.1:/ && $5 !~ /^\[::1\]:/ {bad=1} END {exit !bad}'; then
+    echo "Non-loopback listener on $unit" >&2; exit 1
+  fi
+done
+status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 5 http://127.0.0.1:3000/explore)
+[[ "$status" == 200 ]]
+get http://127.0.0.1:3000/api/datasources/uid/local-tempo | jq -e '.type == "tempo" and .readOnly == true' >/dev/null
+get http://127.0.0.1:3000/api/datasources/proxy/uid/local-tempo/ready | grep -q ready
+status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 5 \
+  -H 'Content-Type: application/json' -d '{"name":"forbidden-check"}' http://127.0.0.1:3000/api/datasources)
+[[ "$status" == 401 || "$status" == 403 ]]
+status=$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 5 \
+  -H 'Content-Type: application/json' -d '{"dashboard":{"title":"forbidden-check"}}' http://127.0.0.1:3000/api/dashboards/db)
+[[ "$status" == 401 || "$status" == 403 ]]
+if [[ "$mode" == runtime ]]; then
+  trace=$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')
+  span=$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')
+  start=$(date +%s%N)
+  end=$((start + 1000000))
+  payload=$(jq -nc --arg trace "$trace" --arg span "$span" --arg start "$start" --arg end "$end" \
+    '{resourceSpans:[{resource:{attributes:[{key:"service.name",value:{stringValue:"local-telemetry-check"}}]},scopeSpans:[{scope:{name:"local-check"},spans:[{traceId:$trace,spanId:$span,name:"local-ingestion-check",startTimeUnixNano:$start,endTimeUnixNano:$end}]}]}]}')
+  get -H 'Content-Type: application/json' -d "$payload" http://127.0.0.1:4318/v1/traces >/dev/null
+  found() { get "http://127.0.0.1:3200/api/traces/$trace" >/dev/null 2>&1; }
+  wait_for found
+  echo "Runtime OK; synthetic trace $trace"
+else
+  # Require recent exporter-shaped spans, not just an old matching service label.
+  cutoff=$(( $(date +%s) - 900 ))
+  proxy=http://127.0.0.1:3000/api/datasources/proxy/uid/local-tempo
+  valid_trace() {
+    jq -e --argjson cutoff "$cutoff" '
+      def attr($key): any(.[]?; .key == $key);
+      any((.batches // .resourceSpans)[]?;
+        any(.resource.attributes[]?; .key == "service.name" and .value.stringValue == "autolith") and
+        (.resource.attributes | attr("autolith.schema.version")) and
+        any(.scopeSpans[]?;
+          .scope.name == "seismograph.autolith" and
+          any(.spans[]?;
+            (.startTimeUnixNano | tonumber) >= ($cutoff * 1000000000) and
+            (.endTimeUnixNano | tonumber) >= (.startTimeUnixNano | tonumber) and
+            (.name | startswith("autolith.")) and
+            (.attributes | attr("autolith.run.span_id")) and
+            any(.attributes[]?;
+              .key == "autolith.event.kind" and
+              (.value.stringValue as $kind | ["run", "tool", "model"] | index($kind) != null)))))
+    ' >/dev/null
+  }
+  found() {
+    local candidate
+    while read -r candidate; do
+      [[ "$candidate" =~ ^[0-9a-f]{32}$ ]] || continue
+      if get "http://127.0.0.1:3200/api/traces/$candidate" | valid_trace &&
+         get "$proxy/api/traces/$candidate" | valid_trace; then
+        trace=$candidate
+        return 0
+      fi
+    done < <(get -G "$proxy/api/search" --data-urlencode 'q={resource.service.name="autolith"}' \
+      --data-urlencode "start=$cutoff" --data-urlencode "end=$(date +%s)" | jq -r '.traces[]?.traceID')
+    return 1
+  }
+  wait_for found
+  jq -nr --arg trace "$trace" '"Autolith trace \($trace): http://127.0.0.1:3000/explore?schemaVersion=1&panes=" + ({a:{datasource:"local-tempo",queries:[{refId:"A",datasource:{type:"tempo",uid:"local-tempo"},queryType:"traceql",query:$trace}],range:{from:"now-1h",to:"now"}}} | tojson | @uri)'
+fi

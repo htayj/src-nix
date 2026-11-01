@@ -449,6 +449,42 @@ To build it without switching the system:
 nix build path:/home/taylor/src#autolith --out-link result-autolith
 ```
 
+### Local telemetry
+
+Run `rbh` to install the Tempo and Grafana user services from
+`home/telemetry.nix`. Open <http://127.0.0.1:3000/explore> and select
+**Local Tempo** to search traces. Anonymous access has the Viewer role;
+Explore is enabled, but saving dashboards and changing datasources is denied.
+The Tempo datasource plugin is pinned through Nix rather than downloaded at startup.
+
+Set the destination in Autolith's Lisp configuration:
+
+```lisp
+(setf (setinka:config :telemetry-endpoint)
+      "http://127.0.0.1:4318/v1/traces")
+```
+
+This setting is durable. Diagnostic consent is configured separately.
+Tempo accepts OTLP/HTTP JSON on port 4318 and serves its API on 3200;
+Grafana uses port 3000. All listeners, including Tempo's internal gRPC and
+memberlist configuration, use loopback. Usage reporting and update checks
+are disabled. Data lives in `~/.local/share/local-telemetry`, with 30-day
+trace retention; allow disk space for your trace volume. Services start
+at boot when user lingering is enabled (`loginctl show-user tay -p Linger`).
+
+Check the services, anonymous read-only access and a synthetic ingestion:
+
+```sh
+scripts/check-local-telemetry runtime
+scripts/check-local-telemetry autolith
+systemctl --user status tempo grafana
+```
+
+The `autolith` check requires real exported Autolith spans from the last 15
+minutes, readable through Tempo and Grafana; allow a turn to finish after
+changing the endpoint. To stop collection locally, run
+`systemctl --user stop tempo grafana`.
+
 ## What is actually worth enabling?
 
 ### Enabled now: `nix-command` and `flakes`
