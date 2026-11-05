@@ -9,7 +9,7 @@
       username = "tay";
       passwordFile = "${config.home.homeDirectory}/.local/share/syncthing-secrets/gui-password.bcrypt";
     };
-    # Repo mirrors with the work laptop: desk-* send, work-* receive.
+    # Mirrors with the work laptop (repos and allow-listed ~/.claude): desk-* send, work-* receive.
     settings = {
       devices = {
         nixos.id = "YKMMZMO-SWOOBYS-NFWAFPF-YCFL3S2-LG6C4HL-WF234TE-OETDKC4-Z6A3XAM";
@@ -31,6 +31,11 @@
           type = "sendonly";
           devices = [ "nixos" "work" ];
         };
+        desk-claude = {
+          path = "${config.home.homeDirectory}/.claude";
+          type = "sendonly";
+          devices = [ "nixos" "work" ];
+        };
         work-bridge = {
           path = "${config.home.homeDirectory}/projects/work-bridge";
           type = "receiveonly";
@@ -43,6 +48,11 @@
         };
         work-claude-notes = {
           path = "${config.home.homeDirectory}/work-claude-notes";
+          type = "receiveonly";
+          devices = [ "nixos" "work" ];
+        };
+        work-claude = {
+          path = "${config.home.homeDirectory}/work-claude";
           type = "receiveonly";
           devices = [ "nixos" "work" ];
         };
