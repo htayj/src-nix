@@ -9,6 +9,8 @@
       username = "tay";
       passwordFile = "${config.home.homeDirectory}/.local/share/syncthing-secrets/gui-password.bcrypt";
     };
+    # Laptop paired manually; no folders are shared.
+    settings.devices.work.id = "FZJMDAV-K7UYTBT-5XFGCGY-GEXYNIE-KHBHSPL-LHCCECR-VLT2GWI-4NFZTAC";
   };
   # Skip the automatic ~/Sync folder on first start.
   systemd.user.services.syncthing.Service.Environment = [ "STNODEFAULTFOLDER=1" ];
