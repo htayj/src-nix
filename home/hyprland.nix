@@ -57,6 +57,7 @@ let
     hl.bind(mainMod .. " + space", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg panel-toggle launcher"), { description = "Launcher" })
     hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg settings-toggle"), { description = "Noctalia settings" })
     hl.bind(mainMod .. " + SHIFT + slash", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg panel-toggle kenn/keybind-cheatsheet:cheatsheet"), { description = "Keybinding cheatsheet" })
+    hl.bind(mainMod .. " + SHIFT + s", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg screenshot-region"), { description = "Screenshot region" })
 
     -- 2. Windows and session
     hl.bind(mainMod .. " + C", hl.dsp.window.close(), { description = "Close window" })
