@@ -81,6 +81,7 @@ let
       hl.bind(mainMod .. " + e", hy3.change_group("untab"), { description = "Untab group" })
       hl.bind(mainMod .. " + a", hy3.change_focus("raise"), { description = "Select parent group" })
       hl.bind(mainMod .. " + SHIFT + a", hy3.change_focus("lower"), { description = "Select child" })
+      hl.bind(mainMod .. " + CTRL + j", hy3.move_window("down", { once = true, visible = true }), { description = "Break tab out below locally" })
     end
     -- 4. Layout switching
     -- Layout selection is session-local; reload restores hy3 as the default.
