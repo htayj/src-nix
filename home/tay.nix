@@ -31,6 +31,7 @@
     forgejo-cli
     herdr
     gitleaks
+    fastfetch
     autolith.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 }
