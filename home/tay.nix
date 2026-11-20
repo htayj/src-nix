@@ -20,6 +20,7 @@
   };
   home.sessionPath = [ "${config.home.profileDirectory}/bin" ];
   home.packages = with pkgs; [
+    freetube
     claude-code
     # Runtimes for the Claude plugins and hooks imported from work.
     nodejs
