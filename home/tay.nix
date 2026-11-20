@@ -21,7 +21,13 @@
   home.sessionPath = [ "${config.home.profileDirectory}/bin" ];
   home.packages = with pkgs; [
     freetube
-    jellyfin-desktop
+    (jellyfin-desktop.overrideAttrs (old: {
+      # Restore WebEngine transparency after a renderer switch so mpv is visible.
+      patches = (old.patches or [ ]) ++ [ (pkgs.fetchurl {
+        url = "https://github.com/jellyfin/jellyfin-desktop/commit/7a14b006d408c13c495b1763209a80f049102c98.patch";
+        hash = "sha256-L4ijseC2D99BhwtoLAIGYiK+Azx+NXy+RiVwuvKu5q0=";
+      }) ];
+    }))
     claude-code
     # Runtimes for the Claude plugins and hooks imported from work.
     nodejs
