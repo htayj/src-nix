@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (( EUID != 0 )); then
+  echo "Run this recovery script with sudo." >&2
+  exit 1
+fi
+if (( $# > 1 )); then
+  echo "Usage: sudo bash $0 [PREBUILT_SYSTEM_PATH]" >&2
+  exit 1
+fi
+
+# Root Nix clients open the local store, so they need the feature too.
+# Export it for rebuild subprocesses, preserving other bootstrap settings.
+export NIX_CONFIG="${NIX_CONFIG:+$NIX_CONFIG$'\n'}extra-experimental-features = cgroups"
+
+repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+recovery_dir=/run/systemd/system/nix-daemon.service.d
+recovery_file=$recovery_dir/90-cgroups-recovery.conf
+system_path=${1:-}
+
+run_job() {
+  local build_user=${SUDO_USER:-}
+  if [[ -z "$build_user" || "$build_user" == root ]]; then
+    echo "Run with sudo from your desktop user, or supply a prebuilt system path." >&2
+    return 1
+  fi
+  local build_uid build_home
+  build_uid=$(id -u "$build_user")
+  build_home=$(getent passwd "$build_user" | cut -d: -f6)
+  runuser -u "$build_user" -- env \
+    "XDG_RUNTIME_DIR=/run/user/$build_uid" "NIX_CONFIG=$NIX_CONFIG" \
+    "PATH=$build_home/.nix-profile/bin:/etc/profiles/per-user/$build_user/bin:$PATH" \
+    agent-job -- "$@"
+}
+
+# Restore the daemon before asking Nix to build its permanent configuration.
+# Keep this override if the rebuild fails, so recovery survives until reboot.
+mkdir -p -- "$recovery_dir"
+printf '[Service]\nEnvironment="NIX_CONFIG=extra-experimental-features = cgroups"\n' > "$recovery_file"
+echo "Restoring the Nix daemon with the cgroups feature enabled."
+systemctl daemon-reload
+systemctl reset-failed nix-daemon.service nix-daemon.socket
+systemctl start nix-daemon.socket nix-daemon.service
+nix store info --store daemon
+
+if [[ -z "$system_path" ]]; then
+  printf 'Checking and building the permanent fix from %s in agent-job scopes.\n' "$repo_root"
+  run_job bash "$repo_root/scripts/check-secrets"
+  run_job nix flake check "path:$repo_root" --max-jobs 2 --cores 2
+  system_path=$(run_job nix build --no-link --print-out-paths \
+    "path:$repo_root#nixosConfigurations.nixos.config.system.build.toplevel" \
+    --max-jobs 2 --cores 2)
+fi
+
+if [[ "$system_path" != /nix/store/*-nixos-system-* ||
+      ! -x "$system_path/bin/switch-to-configuration" ]] ||
+   ! rg -q '^experimental-features\s*=.*\bcgroups\b' "$system_path/etc/nix/nix.conf"; then
+  echo "Refusing to activate a system without the permanent cgroups feature fix." >&2
+  exit 1
+fi
+
+# Match the local activation steps of nixos-rebuild, without rebuilding as root
+# or placing system activation inside a disposable job's cgroup.
+printf 'Activating the checked system %s\n' "$system_path"
+nix-env --profile /nix/var/nix/profiles/system --set "$system_path"
+"$system_path/bin/switch-to-configuration" switch
+
+if ! rg -q '^experimental-features\s*=.*\bcgroups\b' /etc/nix/nix.conf; then
+  echo "The permanent configuration still lacks cgroups; keeping the recovery override." >&2
+  exit 1
+fi
+
+rm -- "$recovery_file"
+rmdir -- "$recovery_dir" 2>/dev/null || true
+systemctl daemon-reload
+nix store info --store daemon
+echo "Nix daemon recovered; the permanent cgroups feature is enabled."

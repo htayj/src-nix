@@ -24,7 +24,7 @@ let
   '';
 in
 {
-  imports = [ ./noctalia.nix ./theme.nix ];
+  imports = [ ./noctalia.nix ./theme.nix ./webkit-oom.nix ./agent-memory.nix ];
 
   systemd.user.targets.manna-cadet-session = {
     description = "Manna-cadet Hyprland session";

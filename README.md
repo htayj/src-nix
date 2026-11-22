@@ -34,10 +34,14 @@ hosts/nixos/                      facts specific to this machine
 modules/core.nix                  Nix, user, networking, base tools
 modules/desktop.nix               Plasma plus a manna-cadet Hyprland session
 modules/manna-cadet.nix           Kanata services and complete XKB keymap
+modules/agent-memory.nix          Nix daemon limits, agent-job hooks, helper slice
+modules/webkit-oom.nix            browser renderer and search worker isolation
+modules/responsiveness.nix        zram, BFQ, desktop protection, tmpfs /tmp, TRIM
 home/tay.nix                     standalone home profile for tay
 home/hyprland.nix                compositor settings, bindings, personal GUI apps
 home/noctalia.nix                shell settings, palette, cheatsheet
 home/tmux.nix                    tmux configuration and plugins from work
+home/agent-memory.nix            agents/agentjobs slices, agent-job and agent-session
 home/theme.nix                   personal GTK/dconf appearance
 home/workflow.nix                rbh and live Hyprland reload
 assets/manna-cadet/               captured maps, license, and provenance
@@ -345,6 +349,139 @@ and the encrypted local vault remain outside the repository and Nix store.
 Run `rbw login` locally and enter your master password in the pinentry dialog.
 Use `rbw sync` to refresh, `rbw unlock` when needed, and `rbw lock` to lock
 immediately. Never paste vault entries into chat, build logs, or Git.
+
+### WebKitGTK renderer memory protection
+
+`modules/webkit-oom.nix` runs a small system service that checks every two
+seconds for Taylor's WebKitGTK `WebKitWebProcess` executables. It moves each
+existing or newly launched renderer into its own `webkit-renderer-*.scope`
+under `webkit.slice`, without restarting the browser. The browser UI and
+Hyprland remain outside these scopes. Renderer processes are identified by
+their executable and UID; pidfds prevent process-ID reuse during migration.
+
+`systemd-oomd` monitors the slice for swap exhaustion and memory pressure above
+40% for 10 seconds, and can kill an individual renderer. Each renderer also has
+a 4 GiB soft memory threshold, a 6 GiB RAM ceiling, and a 1 GiB swap ceiling.
+A terminated renderer may require reloading its tabs. Moving a running process
+does not transfer charges for pages it allocated before the move; those pages
+are accounted in the new group when freed and allocated again.
+
+Activate with `rbs` (root authentication required), then inspect with
+`oomctl dump`, `systemctl status webkit-renderer-cgroups.service`, and
+`systemd-cgls /webkit.slice`. The service also adopts renderers already running
+when it starts. Changes do not require a browser or desktop restart.
+
+### Coding-agent memory protection
+
+`home/agent-memory.nix` keeps interactive agents and disposable jobs in sibling
+user slices. `agent-session COMMAND ...` uses `agents.slice`, which has 2 GiB
+of soft memory protection, no hard ceiling, and is excluded from oomd selection.
+The interactive Codex, Claude and Autolith launchers use this boundary. Existing
+and future tmux pane scopes use `OOMPolicy=continue`, `ManagedOOMPreference=omit`
+and 256 MiB of soft protection, so one child's kernel OOM cannot stop its pane.
+No kill policy is enabled on the entire desktop or user slice.
+Home Manager updates these slices without stopping/restarting their workloads;
+the protected agents slice also refuses an accidental manual stop of the slice.
+
+Use `agent-job -- COMMAND ...` for builds, tests, benchmarks, temporary servers,
+or disposable browser automation. It preserves the terminal, working directory,
+environment and command exit status. Defaults are 3 GiB soft memory, 6 GiB hard
+memory, and 1 GiB swap per job; customize with `--memory-high`, `--memory-max`
+and `--swap-max` before `--`. All jobs share a 6 GiB soft / 10 GiB hard RAM
+budget and 2 GiB swap budget under `agentjobs.slice`, monitored by oomd at
+40% pressure for 10 seconds and for swap exhaustion. These are per-user totals,
+so simultaneous agents cannot each consume the whole budget.
+
+Codex's root-managed PreToolUse hook and Claude's user hook require recognized
+simple build/test commands to retry through `agent-job`. The hook never returns
+an approval or rewrites shell code. Existing Claude guards and personal
+instructions are preserved. Compound shell commands need an explicit boundary,
+for example `agent-job -- bash -c 'make -j2 && ctest'`. Keep agent/subagent
+launches and essential tool servers outside this boundary. Global Codex/Claude
+instructions explain this policy; other agents can call the same launcher.
+New sessions pick up the instructions and hooks. See the
+[official Codex hooks documentation](https://learn.chatgpt.com/docs/hooks).
+
+`modules/agent-memory.nix` limits Nix to two parallel builds with two cores each,
+enables Nix's native build cgroups together with the required experimental
+`cgroups` feature, and bounds the daemon/build subtree to
+8 GiB soft / 12 GiB hard RAM and 2 GiB swap. Pressure monitoring acts on its
+descendant build cgroups. Existing daemon connections may retain their prior
+settings until they reconnect. User-manager processes share 4 GiB of soft
+memory protection. Soft protection only applies when every ancestor cgroup is
+protected too, so `modules/responsiveness.nix` gives `user.slice` and each
+`user-UID.slice` 6 GiB; without it the 4 GiB, 2 GiB and 256 MiB values have
+no effect. The process watcher lowers known Codex, Claude and Autolith
+agent OOM scores to -500; it never raises a more protective existing score.
+This reduces kernel OOM risk without making a leaking agent unkillable.
+
+If a previous system generation enabled `use-cgroups` without that feature,
+the daemon fails before it can build a correction. Run
+`sudo bash /home/taylor/src/scripts/recover-nix-daemon-cgroups`. The helper
+temporarily enables the feature for both daemon and client commands, resets its
+failed service and socket, checks/builds the correction in the calling user's
+`agent-job` scopes, switches the corrected `path:/home/taylor/src#nixos` configuration,
+and removes its temporary override after verifying the permanent setting.
+An optional prebuilt NixOS store path skips the checks/build already completed
+by the caller and leaves only the privileged activation step.
+On rebuild failure the temporary override remains until reboot. A module
+assertion prevents rebuilding a configuration with the missing dependency.
+
+The watcher also isolates Firefox tab processes (not its main UI or extension
+process) under `firefox.slice`, with the same per-process limits as WebKit.
+Explicit Autolith search workers go under `agenthelpers.slice`, with 2 GiB
+soft / 4 GiB hard RAM and 1 GiB swap each, and a shared 6 GiB hard RAM / 2 GiB
+swap budget. The installed clifff supervisor restarts a dead helper and retries
+once; repeated failures are reported to the agent rather than killing it.
+Main Autolith images and other Lisp processes are not classified as expendable.
+
+Apply user settings with `rbh` and system settings with `rbs`. Inspect with
+`oomctl dump`, `systemctl --user show agentjobs.slice agents.slice`, and
+`systemctl status webkit-renderer-cgroups.service`. Root authentication is
+needed only for the system switch. No agent restart is needed for live tmux
+policy and process-priority protection; new launch wrappers/hooks apply to
+subsequent sessions. Existing allocated pages retain their old cgroup charges.
+
+Disk access is weighted as well: `agents.slice`, `agentjobs.slice`,
+`agenthelpers.slice` and the Nix daemon use `IOWeight=25` (default 100), so
+agent scans and builds yield to the desktop when the disk is contended. BFQ
+enforces these weights. When BFQ is loaded on a running system, cgroups that
+already exist keep a root-owned `io.bfq.weight`, so the user-level weights
+take effect after the next reboot.
+
+Regression checks are `python3 scripts/test-agent-memory.py` and, with the
+dbus-next Python environment, `scripts/test-webkit-renderer-cgroups.py`.
+After user activation, run `AGENT_MEMORY_INTEGRATION=1 agent-session python3
+scripts/test-agent-memory.py` for a small controlled job OOM test that checks
+the protected parent scope survives. The test scope has a 64 MiB RAM ceiling
+and no swap, so it does not stress system-wide memory.
+
+### Desktop responsiveness
+
+`modules/responsiveness.nix` keeps the compositor, audio and input responsive
+while agents load the shared NVMe. The drive stalled for seconds at a time
+when it was nearly full and deleted space had not been trimmed, and every
+process waiting on it froze together.
+
+- Compressed zram swap (zstd, half of RAM) is used before the NVMe swap
+  partition, with `vm.swappiness=100` because swapping to zram is cheap.
+- The NVMe uses the BFQ scheduler so per-cgroup `IOWeight` is enforced. Login
+  session scopes, which hold Hyprland, and the user `session.slice`, which
+  holds PipeWire, get `IOWeight=10000`.
+- Session scopes get 1.5 GiB and PipeWire, PipeWire-Pulse and WirePlumber
+  128 MiB of soft memory protection, so they are not swapped out first.
+- `/tmp` is an 8 GiB tmpfs. Nix builds use `/var/tmp` instead, so large builds
+  do not fill RAM.
+- `fstrim` runs daily rather than weekly.
+
+`home/workflow.nix` expires Home Manager and user Nix profile generations older
+than seven days, daily. The root `nix-gc` timer no longer sees profiles under
+`~/.local/state/nix/profiles`; it still collects the store paths they release.
+
+Changing PipeWire's unit overrides restarts audio on `rbs`, and WirePlumber
+may then fall back to a different default output; reselect it with
+`wpctl set-default`. The tmpfs `/tmp` is applied at boot; switching it live
+would hide the tmux and X11 sockets of running sessions.
 
 ## Claude Code and Bridge
 

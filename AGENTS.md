@@ -18,3 +18,6 @@
   unsigned commit if signing fails. Verify the resulting commit signature.
 - Do not activate the system with sudo unless it is available/authorized; report
   required `rbs` steps clearly. Home activation uses `rbh` without sudo.
+- Run builds, test suites, benchmarks, temporary servers and browser automation
+  through `agent-job -- COMMAND ...`. Keep agents, subagents and essential tool
+  servers outside those job limits. Use `agent-session` for agent launchers.
