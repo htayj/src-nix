@@ -762,9 +762,20 @@ when middle-click creates a new buffer. Regression checks:
 
 ## Claude Code and Bridge
 
-Claude Code and plugin runtimes are installed in the home profile. Personal
-settings, marketplace files, memories, notes, and all credentials stay outside
-this repository and the Nix store.
+Home Manager installs Claude Code's NixOS compatibility launcher and plugin
+runtimes. The launcher runs the native installer's `~/.local/bin/claude` symlink
+through Nix's loader and `agent-session`; upstream manages the actual binaries
+under `~/.local/share/claude/versions/`. Native background updates take effect
+on the next launch without a Nix rebuild. `claude update` checks immediately;
+`claude doctor` reports the active version, update channel and update status.
+Keep the compatibility launcher ahead of `~/.local/bin` on PATH.
+
+Personal settings, marketplace files, memories, notes, and all credentials stay
+outside this repository and the Nix store. `~/.claude/settings.json` stores user
+preferences; writable `~/.claude.json` stores per-project trust and other runtime
+state. Home Manager preserves these files. Each new repository needs its own
+initial trust approval; Claude intentionally never saves home-directory trust
+between sessions. Launch inside a project to reuse its saved trust decision.
 
 `~/projects/bridge` was imported as a working-tree snapshot from `tay@work`,
 including uncommitted source changes, without credentials, node_modules, or
@@ -778,6 +789,18 @@ It listens only on loopback: gateway/UI port 8787 and log API port 8788.
 `BRIDGE_FALLBACK=0` matches work. It uses existing local provider credentials;
 no credentials were copied from work. Claude's mutable settings point to
 `http://127.0.0.1:8787`.
+
+Codex terminal launches use a Bash alias that disables the desktop browser,
+computer-use, app-tools plugins, and the standalone browser REPL. The desktop
+app still uses their shared settings in `~/.codex/config.toml`. Start a new Bash
+shell, or run `source ~/.bashrc`, before launching a new CLI session.
+
+For CLI browser automation, `agent-browser` is installed with Nix's Chromium
+configured in `~/.agent-browser/config.json`. Its upstream Codex skill is
+installed outside this repository at `~/.codex/skills/agent-browser`; load
+`agent-browser skills get core` for version-matched instructions. Use a named
+session for each task and close it when finished. Obscura remains an optional
+experimental engine; Chromium is the default for browser compatibility.
 
 Codex's mutable `~/.codex/config.toml` selects `model_provider = "bridge"`:
 
