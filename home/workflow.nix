@@ -34,6 +34,29 @@ let
 in
 {
   home.packages = [ rebuildHome reloadDesktop ];
+
+  # The system's weekly nix-gc runs as root and no longer sees per-user
+  # profiles under ~/.local/state, so expire them here and let it collect.
+  services.home-manager.autoExpire = {
+    enable = true;
+    timestamp = "-7 days";
+    frequency = "daily";
+  };
+  systemd.user.services.expire-nix-profile = {
+    Unit.Description = "Delete user Nix profile generations older than 7 days";
+    Service = {
+      Type = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/nix-env --delete-generations 7d";
+    };
+  };
+  systemd.user.timers.expire-nix-profile = {
+    Unit.Description = "Daily user Nix profile generation expiry";
+    Timer = {
+      OnCalendar = "daily";
+      Persistent = true;
+    };
+    Install.WantedBy = [ "timers.target" ];
+  };
   # Every home switch refreshes the compositor, even if the config is unchanged.
   home.activation.reloadDesktop = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     run ${lib.getExe reloadDesktop}

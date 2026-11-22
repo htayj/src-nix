@@ -5,6 +5,7 @@
     ../../modules/core.nix
     ../../modules/desktop.nix
     ../../modules/manna-cadet.nix
+    ../../modules/responsiveness.nix
   ];
 
   networking.hostName = "nixos";
