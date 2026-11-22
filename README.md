@@ -332,7 +332,16 @@ are adapted from `tay@work` (read-only inspection); see
 - Thumb+Shift+Slash: keybinding cheatsheet, with this host's Thumb/Meta labels.
 - Thumb+Ctrl+L: lock the screen manually.
 - Volume keys: Noctalia volume controls and on-screen display.
-- Idle: lock after five minutes, screen off after ten minutes.
+- Idle: screen off after ten minutes; automatic locking (including before suspend) is disabled.
+
+The media idle inhibitor keeps screens awake during audio/video playback, but
+ignores communication/notification streams and Discord (including its Firefox
+tab, which can keep a silent audio stream running indefinitely). It releases
+the inhibitor within two seconds after eligible playback stops. Manually locked
+displays enter standby after 30 seconds. The DPMS service retries every 30 seconds
+while idle, whether locked or unlocked, to handle the G9 reconnecting after sleep.
+Activity stops the retries and wakes the displays. Inspect `journalctl --user -u
+media-idle-inhibit -u idle-dpms` when diagnosing display sleep.
 
 The cheatsheet uses live `hyprctl binds -j` data, not a second hand-maintained
 key list. Categories and descriptions come from `hyprland-settings.lua`,
