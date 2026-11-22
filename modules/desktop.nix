@@ -35,6 +35,12 @@ in
   hardware.graphics.enable = true;
   security.rtkit.enable = true;
 
+  # Logitech device settings and button rules for the MX Master mouse.
+  programs.solaar = {
+    enable = true;
+    userService.enable = true;
+  };
+
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.displayManager.defaultSession = "manna-cadet";

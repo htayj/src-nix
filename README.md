@@ -267,6 +267,13 @@ the right of **T** and **G** send **Y** and **H**, respectively. Other mappings
 are preserved, including holding End or Page Down alone for the function layer.
 Kanata starts in the normal manna-cadet layer after a service restart.
 
+After `rbs`, open **Solaar** (`solaar`) for **Logitech MX Master 3** settings
+and button remapping. For custom button actions, enable diversion for the button
+in the mouse settings, then use Solaar's rule editor. Solaar starts in the tray
+at login so its rules remain active. Reconnect the USB receiver after the first
+switch if Solaar cannot access it yet; the NixOS module installs its device
+permission rules.
+
 Inspect them with:
 
 ```sh
