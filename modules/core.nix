@@ -19,6 +19,17 @@
   };
 
   networking.networkmanager.enable = true;
+  services.tailscale = {
+    enable = true;
+    openFirewall = true;
+    # Preserve LAN DNS; chat resolves desk's MagicDNS name for ProxyJump.
+    extraSetFlags = [ "--hostname=desk" "--operator=tay" "--accept-dns=false" ];
+  };
+  services.openssh = {
+    enable = true;
+    openFirewall = true;
+    settings.PermitRootLogin = "no";
+  };
   i18n.defaultLocale = "en_US.UTF-8";
   console.keyMap = "us";
 
