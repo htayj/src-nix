@@ -6,8 +6,10 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import shutil
 import sqlite3
 import stat
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -17,6 +19,21 @@ SCRIPT = Path(__file__).resolve().parents[1] / "home/firefox-personal-export.py"
 spec = importlib.util.spec_from_file_location("firefox_export", SCRIPT)
 exporter = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(exporter)
+
+
+def gitleaks():
+    # setup-git-hooks links the scanner in the common git dir; in a worktree,
+    # .git is a file, so the link is not under the checkout.
+    common = subprocess.run(["git", "-C", str(SCRIPT.parent), "rev-parse", "--path-format=absolute",
+                             "--git-common-dir"], capture_output=True, text=True, check=True).stdout.strip()
+    linked = Path(common) / "gitleaks-bin"
+    found = str(linked.resolve()) if linked.exists() else shutil.which("gitleaks")
+    if found is None:
+        raise RuntimeError("Install gitleaks or run scripts/setup-git-hooks first.")
+    return found
+
+
+GITLEAKS = gitleaks()
 
 
 class FirefoxExportTest(unittest.TestCase):
@@ -33,7 +50,7 @@ class FirefoxExportTest(unittest.TestCase):
         for name, value in (("PROFILE", self.profile), ("PROFILES_INI", self.ini),
                             ("EXPORT_ROOT", self.base / "export"),
                             ("OWNER_UID", os.geteuid()), ("BACKUP_SECONDS", 0.1),
-                            ("GITLEAKS", str((SCRIPT.parents[1] / ".git/gitleaks-bin").resolve())),
+                            ("GITLEAKS", GITLEAKS),
                             ("GITLEAKS_CONFIG", str(scanner_config))):
             changing = patch.object(exporter, name, value)
             changing.start()
