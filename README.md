@@ -37,6 +37,7 @@ modules/manna-cadet.nix           Kanata services and complete XKB keymap
 modules/agent-memory.nix          Nix daemon limits, agent-job hooks, helper slice
 modules/webkit-oom.nix            browser renderer and search worker isolation
 modules/responsiveness.nix        zram, BFQ, desktop protection, tmpfs /tmp, TRIM
+modules/nas-mounts.nix            optional on-demand QNAP and TrueNAS shares
 home/tay.nix                     standalone home profile for tay
 home/hyprland.nix                compositor settings, bindings, personal GUI apps
 home/noctalia.nix                shell settings, palette, cheatsheet
@@ -54,7 +55,7 @@ another machine.
 ## Daily rebuilds and the home/system split
 
 - `rbs`: privileged NixOS switch, for hardware, boot, SDDM/Plasma, Kanata,
-  XKB, audio, portals, GnuPG agent/Qt pinentry, and base tools including Git.
+  XKB, audio, portals, GnuPG agent/Qt pinentry, NAS mounts, and base tools including Git.
 - `rbh`: standalone `home-manager switch --flake path:/home/taylor/src#tay`,
   without sudo, for personal packages (including Herdr and Autolith), shell,
   tmux, Kitty, Hyprland settings/bindings, Noctalia, and GTK/dconf appearance.
@@ -97,6 +98,42 @@ nix build path:.#homeConfigurations.tay.activationPackage --out-link result-home
 nix build path:.#nixosConfigurations.nixos.config.system.build.toplevel --out-link result-system
 nix flake check path:.
 ```
+
+## Optional NAS mounts
+
+`modules/nas-mounts.nix` adds three NFSv4 shares after `rbs`:
+
+| Local directory | Existing NAS export |
+| --- | --- |
+| `/mnt/qnap` | QNAP `192.168.7.69:/Public` (its `/share/Public`) |
+| `/mnt/sas-main` | TrueNAS `192.168.1.242:/mnt/sas-main/main` |
+| `/mnt/ssd` | TrueNAS `192.168.1.242:/mnt/ssd/main` |
+
+systemd starts the automounts at boot and connects to each NAS only when its
+directory is accessed. `nofail` keeps the shares optional; an unavailable NAS
+does not hold up boot or send the system into emergency mode. Initial mount
+attempts have a 10-second timeout. Idle shares unmount after one minute when
+they are no longer busy, and later access mounts them again. The fixed LAN
+addresses avoid a dependency on NAS hostname resolution. TrueNAS mounts cover
+the exported `main` datasets, not the entire pools or separate CSI datasets.
+
+These desktop shares use `softerr,timeo=50,retrans=2` to return a timeout error
+after bounded NFS retries if a mounted NAS disappears. An application accessing
+the NAS can pause during those retries, but does not retry forever. Failed
+mounts are retried on later access. After the NAS returns, access the directory
+again. A quick check after activation is:
+
+```sh
+ls /mnt/qnap /mnt/sas-main /mnt/ssd
+findmnt -t nfs,nfs4
+systemctl status mnt-qnap.automount 'mnt-sas\x2dmain.automount' mnt-ssd.automount
+```
+
+Timed-out writes can leave incomplete or corrupt files; verify and retry
+interrupted copies. Do not use these timeout-oriented mounts for databases or VM disks
+that require indefinite NFS retries for write integrity. The local mountpoint
+directories are root-owned and unwritable by ordinary users while unmounted,
+so stopped automounts cannot silently redirect their writes onto the local disk.
 
 ## Secret scanning and signed commits
 

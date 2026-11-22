@@ -5,6 +5,7 @@
     ../../modules/core.nix
     ../../modules/desktop.nix
     ../../modules/manna-cadet.nix
+    ../../modules/nas-mounts.nix
     ../../modules/responsiveness.nix
   ];
 
