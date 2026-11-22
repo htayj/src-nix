@@ -330,6 +330,7 @@ are adapted from `tay@work` (read-only inspection); see
 - Thumb+Space: Noctalia launcher.
 - Thumb+Comma: Noctalia settings.
 - Thumb+Shift+Slash: keybinding cheatsheet, with this host's Thumb/Meta labels.
+- Thumb+Ctrl+L: lock the screen manually.
 - Volume keys: Noctalia volume controls and on-screen display.
 - Idle: lock after five minutes, screen off after ten minutes.
 

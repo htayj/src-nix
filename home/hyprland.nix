@@ -34,6 +34,33 @@ let
     local function move(direction)
       return chooseLayout(hy3 and hy3.move_window(direction), hl.dsp.window.move({ direction = direction }))
     end
+    local readingWindows = {}
+    local function toggleReadingWindow()
+      local window = hl.get_active_window()
+      if not window or not window.monitor then return end
+      local previous = readingWindows[window.address]
+      hl.dispatch(hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = "set", window = window }))
+      if previous then
+        readingWindows[window.address] = nil
+        hl.dispatch(hl.dsp.window.float({ action = previous.floating and "enable" or "disable", window = window }))
+        if previous.floating then
+          hl.dispatch(hl.dsp.window.resize({ x = previous.size.x, y = previous.size.y, window = window }))
+          hl.dispatch(hl.dsp.window.move({ x = previous.at.x, y = previous.at.y, window = window }))
+        end
+        return
+      end
+      readingWindows[window.address] = { floating = window.floating, at = window.at, size = window.size }
+      local monitor = window.monitor
+      local reserved = monitor.reserved
+      local width = monitor.width / monitor.scale
+      local height = monitor.height / monitor.scale - reserved.top - reserved.bottom
+      hl.dispatch(hl.dsp.window.float({ action = "enable", window = window }))
+      hl.dispatch(hl.dsp.window.resize({ x = math.floor(width * 0.6), y = math.floor(height), window = window }))
+      hl.dispatch(hl.dsp.window.move({ x = monitor.x + math.floor(width * 0.2), y = monitor.y + reserved.top, window = window }))
+    end
+    -- Guix layout: the CRT sits below the right side of the ultrawide.
+    hl.monitor({ output = "DP-1", mode = "5120x1440@119.98", position = "0x0", scale = 1 })
+    hl.monitor({ output = "HDMI-A-1", mode = "800x600@75", position = "4200x1440", scale = 1 })
     hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
     hl.env("NOCTALIA_CONFIG_HOME", "${config.xdg.configHome}")
     -- Portals require an active graphical session and the compositor environment.
@@ -56,12 +83,14 @@ let
     hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd("${lib.getExe pkgs.kitty}"), { description = "Terminal" })
     hl.bind(mainMod .. " + space", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg panel-toggle launcher"), { description = "Launcher" })
     hl.bind(mainMod .. " + comma", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg settings-toggle"), { description = "Noctalia settings" })
+    hl.bind(mainMod .. " + y", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg panel-toggle control-center system"), { description = "CPU and memory monitor" })
     hl.bind(mainMod .. " + SHIFT + slash", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg panel-toggle kenn/keybind-cheatsheet:cheatsheet"), { description = "Keybinding cheatsheet" })
     hl.bind(mainMod .. " + SHIFT + s", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg screenshot-region"), { description = "Screenshot region" })
 
     -- 2. Windows and session
     hl.bind(mainMod .. " + C", hl.dsp.window.close(), { description = "Close window" })
     hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.exit(), { description = "Log out" })
+    hl.bind(mainMod .. " + CTRL + l", hl.dsp.exec_cmd("${lib.getExe pkgs.noctalia} msg session lock"), { description = "Lock screen" })
     hl.bind(mainMod .. " + h", focus("left"), { description = "Focus left" })
     hl.bind(mainMod .. " + l", focus("right"), { description = "Focus right" })
     hl.bind(mainMod .. " + k", focus("up"), { description = "Focus up" })
@@ -70,14 +99,18 @@ let
     hl.bind(mainMod .. " + SHIFT + j", move("down"), { description = "Move window/group down" })
     hl.bind(mainMod .. " + SHIFT + k", move("up"), { description = "Move window/group up" })
     hl.bind(mainMod .. " + SHIFT + l", move("right"), { description = "Move window/group right" })
-    hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = "set" }), { description = "Restore tiled window" })
+    hl.bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen_state({ internal = 0, client = 0, action = "set" }), { description = "Exit fullscreen" })
+    hl.bind(mainMod .. " + CTRL + F", hl.dsp.window.float({ action = "toggle" }), { description = "Toggle floating window" })
+    hl.bind(mainMod .. " + F", toggleReadingWindow, { description = "Toggle centered reading window (60% width)" })
+    hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(), { mouse = true, description = "Drag window" })
+    hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, description = "Resize window" })
 
     -- 3. hy3 splits and groups
     if hy3 then
       hl.bind(mainMod .. " + n", hy3.focus_tab({ direction = "right", wrap = true }), { description = "Next tab" })
       hl.bind(mainMod .. " + p", hy3.focus_tab({ direction = "left", wrap = true }), { description = "Previous tab" })
-      hl.bind(mainMod .. " + b", hy3.make_group("h"), { description = "Horizontal split" })
-      hl.bind(mainMod .. " + v", hy3.make_group("v"), { description = "Vertical split" })
+      hl.bind(mainMod .. " + b", hy3.make_group("h", { toggle = true }), { description = "Toggle horizontal split" })
+      hl.bind(mainMod .. " + v", hy3.make_group("v", { toggle = true }), { description = "Toggle vertical split" })
       hl.bind(mainMod .. " + w", hy3.change_group("tab"), { description = "Tabbed group" })
       hl.bind(mainMod .. " + e", hy3.change_group("untab"), { description = "Untab group" })
       hl.bind(mainMod .. " + a", hy3.change_focus("raise"), { description = "Select parent group" })
