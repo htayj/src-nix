@@ -43,6 +43,8 @@ home/hyprland.nix                compositor settings, bindings, personal GUI app
 home/noctalia.nix                shell settings, palette, cheatsheet
 home/tmux.nix                    tmux configuration and plugins from work
 home/agent-memory.nix            agents/agentjobs slices, agent-job and agent-session
+home/emacs.nix                   Wayland Emacs, packages, grammars and tools
+home/emacs/nixos.patch           host adaptation of the pinned emacs.d/new
 home/theme.nix                   personal GTK/dconf appearance
 home/workflow.nix                rbh and live Hyprland reload
 assets/manna-cadet/               captured maps, license, and provenance
@@ -58,7 +60,7 @@ another machine.
   XKB, audio, portals, GnuPG agent/Qt pinentry, NAS mounts, and base tools including Git.
 - `rbh`: standalone `home-manager switch --flake path:/home/taylor/src#tay`,
   without sudo, for personal packages (including Herdr and Autolith), shell,
-  tmux, Kitty, Hyprland settings/bindings, Noctalia, and GTK/dconf appearance.
+  tmux, Emacs, Kitty, Hyprland settings/bindings, Noctalia, and GTK/dconf appearance.
 - Plasma's system-wide dark fallback remains in NixOS; the existing mutable
   `~/.config/kdeglobals` is deliberately not replaced.
 
@@ -98,6 +100,111 @@ nix build path:.#homeConfigurations.tay.activationPackage --out-link result-home
 nix build path:.#nixosConfigurations.nixos.config.system.build.toplevel --out-link result-system
 nix flake check path:.
 ```
+
+## Emacs
+
+Home Manager installs Wayland-native Emacs with the `new` branch of
+<https://github.com/htayj/emacs.d>, pinned in `flake.lock`. Run `emacs` from a
+terminal or select Emacs in the application launcher. `emacs -nw` uses the same
+configuration in a terminal.
+
+`home/emacs/nixos.patch` adapts upstream to NixOS: Nix supplies the Lisp
+packages, native vterm module, tree-sitter grammars, language servers and
+formatters. Startup does not bootstrap Straight or download grammars. The
+patch also fixes an upstream parenthesis error, Eglot command arguments,
+missing Custom-file handling, and Evil/undo-tree initialization. SLIME uses
+the installed SBCL. The font is DejaVu Sans Mono at the original size, with
+Unifont fallback. Hyprland continues to manage windows; the old EXWM config
+and Guix integration are not loaded.
+
+The four configuration files are linked individually into `~/.emacs.d`, leaving
+history and caches writable. Optional personal Custom settings remain in
+`~/emacs-custom.el`, outside the Nix store. Credentials continue to come from
+the environment or existing files outside this repository.
+
+Useful bindings include `C-c s` for SLIME, `C-c a` for AI Code (Codex/vterm),
+and `C-c A` for Aidermacs. AI backends use their existing authentication;
+Aidermacs retains the upstream DeepSeek defaults and needs an external `aider`
+CLI; the pinned Nixpkgs Aider currently has a broken dependency. OpenClaw is
+conditional on its library being available; the OpenClaw desktop app connects
+to the cluster Gateway rather than running a Gateway on this host.
+PureScript editing is installed, with automatic LSP enabled only when its
+language server is available. Nix, TypeScript/TSX and Typst have packaged
+servers configured through Eglot.
+
+Apply changes with `rbh`; no NixOS switch is required. To update upstream,
+run `nix flake update emacs-config --flake path:.`, review/rebase the patch,
+run `scripts/check-secrets` and the usual Home Manager build/checks, then `rbh`.
+The reference checkout is at `/home/taylor/projects/emacs.d`; the installed
+configuration comes from the locked input and patch, not that mutable checkout.
+
+### Gnus mail and Usenet
+
+`C-c g` or `M-x gnus` opens `tay@nogroup.group`; `C-x m` composes mail.
+`home/emacs/mail.el` uses `mail.nogroup.group` over IMAPS (993) and SMTPS
+(465), with TLS certificate verification. The From identity is Taylor Hardy
+<tay@nogroup.group>. Gnus subscribes to the existing server folders and saves
+sent copies in `Sent Items`.
+
+Address completion is enabled in recipient headers: type `gr` in To, Cc or Bcc
+and press `TAB` to complete `gronk@nogroup.group`, or choose from the automatic
+completion popup. Bubu, Chryso, Donk and Gronk are included initially. Successful
+sends add other addresses to the history in `~/.local/share/gnus/addresses.eld`;
+`M-x ecomplete-edit` edits saved entries.
+
+Groups show read and unread messages by default. Threads with the newest reply
+appear first; unthreaded messages are sorted newest first by date.
+
+OpenPGP uses the existing GnuPG keyring in `~/.gnupg`, shared with Thunderbird's
+external-key setup. Signed messages are verified automatically, with visible
+security buttons for signature details and encrypted messages. Encrypted mail
+uses GnuPG's graphical passphrase prompt when needed. A valid signature and a
+trusted sender identity are separate results; importing a public key does not
+mark its owner as trusted.
+
+While composing, `M-x mml-secure-message-sign-pgpmime` signs the message;
+`M-x mml-secure-message-encrypt-pgpmime` signs and encrypts it. These commands
+prepare the message for sending. Signing selects the personal key matching
+the From address. The key includes `tay@nogroup.group`, `taylor@taylorhardy.net`,
+and the GitHub noreply address as identities.
+
+OpenPGP encryption also includes the sender's key automatically, so encrypted
+copies in `Sent Items` can be decrypted with your own key.
+
+GnuPG group aliases map `donk@nogroup.group`, `gronk@nogroup.group`, and
+`bubu@nogroup.group` to their existing public-key fingerprints for encryption.
+Gnus/EasyPG reads these aliases from `~/.gnupg/gpg.conf`. They are local address
+mappings; the public keys retain their original email identities until each
+owner adds a self-certified identity for the new address. Key certifications
+and trust remain in the mutable GnuPG keyring.
+
+Mail with any `nogroup.group` recipient in To, Cc, or Bcc is signed automatically
+at send time, including mail with both internal and external recipients. An
+existing encryption selection is retained and upgraded to sign and encrypt
+when necessary. Signing errors stop sending; mail addressed only to external
+recipients keeps its selected security settings.
+
+The password is read at runtime with `rbw` from the existing Vaultwarden
+entry `Stalwart / nogroup.group / tay`. The auth-source backend is restricted
+to this account and its encrypted mail endpoints; no password is copied into
+Nix, an authinfo file, or the repository. If the vault is locked, run
+`rbw unlock`; after changing the vault entry, run `rbw sync`.
+
+Gnus subscriptions and read state live in `~/.local/share/gnus/`. Unsent Gnus
+drafts are local there; the server's `Drafts` folder also remains available
+for drafts from Thunderbird and other clients. Use `M-x gnus-group-list-all-groups`
+to show subscribed folders that have no unread messages.
+
+Eternal September is also configured as the `eternal-september` NNTP server,
+using account `htayj` and verified TLS on port 563. Gnus authenticates before
+listing groups so that the full service is available. Its credential comes
+from the Vaultwarden entry `Eternal September / htayj`, recovered from the
+registration in `taylor.hardy.moe@gmail.com` and kept outside Nix.
+
+In the Gnus group buffer, `^` opens the server list. Select `eternal-september`
+and press `RET` to browse its groups; `u` toggles a group's subscription.
+News groups are not subscribed automatically. Mail continues to use
+`tay@nogroup.group`, with sent copies in the existing `Sent Items` folder.
 
 ## Optional NAS mounts
 

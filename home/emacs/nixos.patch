@@ -1,0 +1,432 @@
+--- a/early-init.el
++++ b/early-init.el
+@@ -1,31 +1,5 @@
+-;;; early-init.el --- Description -*- lexical-binding: t; -*-
+-;;
+-;; Copyright (C) 2025 Taylor Hardy
+-;;
+-;; Author: Taylor Hardy <tay@work>
+-;; Maintainer: Taylor Hardy <tay@work>
+-;; Created: April 15, 2025
+-;; Modified: April 15, 2025
+-;; Version: 0.0.1
+-;; Keywords: abbrev bib c calendar comm convenience data docs emulations extensions faces files frames games hardware help hypermedia i18n internal languages lisp local maint mail matching mouse multimedia news outlines processes terminals tex text tools unix vc wp
+-;; Homepage: https://github.com/tay/early-init
+-;; Package-Requires: ((emacs "24.3"))
+-;;
+-;; This file is not part of GNU Emacs.
+-;;
+-;;; Commentary:
+-;;
+-;;  Description
+-;;
+-;;; Code:
+-
+-
+-(require 'package)
+-(setq package-enable-at-startup nil)
+-
+-(setq package-archives '(("ELPA"  . "http://tromey.com/elpa/")
+-                         ("gnu"   . "http://elpa.gnu.org/packages/")
+-                         ("melpa" . "https://melpa.org/packages/")
+-                         ("org"   . "https://orgmode.org/elpa/")))
+-(package-initialize)
+-;;; early-init.el ends here
++;;; early-init.el --- Nix package startup -*- lexical-binding: t; -*-
++;; Nix supplies load-path; init activates autoloads after setting package flags.
++(setq package-enable-at-startup nil
++      evil-want-integration t
++      evil-want-keybinding nil)
+--- a/init.el
++++ b/init.el
+@@ -23,40 +23,17 @@
+ ;; bootstrapping package stuff
+ ;; =============================================================================
+ 
+-;; default emacs package management
+-;; DONE maybe do this in early-init.el?
+-;; (require 'package)
+-;; (setq package-enable-at-startup nil)
+-;; TODO maybe move the rest out of early-init?
+-
+-;; (setq package-archives '(("ELPA"  . "http://tromey.com/elpa/")
+-;;                          ("gnu"   . "http://elpa.gnu.org/packages/")
+-;;                          ("melpa" . "https://melpa.org/packages/")
+-;;                          ("org"   . "https://orgmode.org/elpa/")))
+-;; (package-initialize)
+-
+-;; bootstrap use-package
++;; Home Manager supplies packages; startup must not download or compile them.
++(require 'package)
++;; Activate dependencies before packages whose autoloads expand their macros.
++(package-initialize t)
++(package-activate 'transient)
++(require 'transient)
++(require 'compile)
++(package-activate-all)
+ (require 'use-package)
+-
+-;;; Bootstrapping straight
+-(defvar bootstrap-version)
+-(let ((bootstrap-file
+-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+-      (bootstrap-version 5))
+-  (unless (file-exists-p bootstrap-file)
+-    (with-current-buffer
+-        (url-retrieve-synchronously
+-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+-         'silent 'inhibit-cookies)
+-      (goto-char (point-max))
+-      (eval-print-last-sexp)))
+-  (load bootstrap-file nil 'nomessage))
+-
+-(use-package straight
+-  :custom (straight-use-package-by-default t))
+-
+-;; have to install org early for some reason
+-(straight-use-package 'org)
++(setq use-package-always-ensure nil)
++
+ ;; =============================================================================
+ ;; Custom use-package bindings
+ ;; =============================================================================
+@@ -66,7 +43,7 @@
+ ;; =============================================================================
+ (tool-bar-mode -1)
+ (menu-bar-mode -1)
+-(scroll-bar-mode -1)
++(when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+ (global-subword-mode t)
+ (setq kill-whole-line t)
+ (setq indent-tabs-mode nil)
+@@ -74,8 +51,14 @@
+ 
+ (global-set-key (kbd "C-x k") 'kill-current-buffer)
+ 
+-(set-fontset-font t nil (font-spec :size 20 :name "vt220" ))
+-(set-fontset-font t nil (font-spec :size 16 :name "unifont"))
++;; These fonts are installed through Home Manager, including Unicode fallback.
++(add-to-list 'default-frame-alist '(font . "DejaVu Sans Mono-16"))
++(defun my/font-fallback (&optional frame)
++  (with-selected-frame (or frame (selected-frame))
++    (when (display-graphic-p)
++      (set-fontset-font t nil (font-spec :family "Unifont") nil 'append))))
++(add-hook 'after-make-frame-functions #'my/font-fallback)
++(my/font-fallback)
+ 
+ 
+ ;; auto close parens
+@@ -92,7 +75,6 @@
+ ;; irc
+ ;; =============================================================================
+ (use-package erc-hl-nicks
+-  :straight t
+   :config
+   (erc-update-modules))
+ (setq erc-nick "htayj")
+@@ -127,7 +109,7 @@
+ (require 'treesit)
+ (use-package treesit-auto
+   :custom
+-  (treesit-auto-install 'prompt)
++  (treesit-auto-install nil)
+   :config
+   (treesit-auto-add-to-auto-mode-alist 'all)
+   (global-treesit-auto-mode))
+@@ -135,11 +117,9 @@
+ ;;eglot config
+ (require 'eglot)
+ (add-to-list 'eglot-server-programs
+-             '((tsx-mode) "typescript-language-server --stdio"))
++             '((typescript-ts-mode tsx-ts-mode js-ts-mode) . ("typescript-language-server" "--stdio")))
+ (add-to-list 'eglot-server-programs
+-             '((tsx-ts-mode) "typescript-language-server --stdio"))
+-(add-to-list 'eglot-server-programs
+-             '((js-json-mode) "vscode-json-languageserver" "--stdio"))
++             '((js-json-mode json-ts-mode) . ("vscode-json-language-server" "--stdio")))
+ (add-to-list 'eglot-server-programs
+              '((typst-ts-mode) "tinymist"))
+ (add-to-list 'eglot-server-programs '(nix-mode . ("nil")))
+@@ -154,8 +134,7 @@
+ 
+ ;; show eldoc in a popup to prevent resizing minibuffer
+ ;; (use-package eldoc-box
+-;;   :straight t
+-;;   :config
++;; ;;   :config
+ ;;   (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-at-point-mode t)
+ ;;   (add-hook 'lsp-managed-mode-hook #'eldoc-box-hover-at-point-mode t)
+ ;;   (add-hook 'emacs-lisp-mode-hook #'eldoc-box-hover-at-point-mode t))
+@@ -167,7 +146,6 @@
+ 
+ 
+ (use-package rainbow-delimiters
+-  :straight t
+   :init
+   (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+ (use-package colorful-mode
+@@ -343,7 +321,6 @@
+ 
+ 
+ (use-package sudo-edit
+-  :straight t
+   :bind
+   ("s-e" . sudo-edit))
+ 
+@@ -351,7 +328,6 @@
+ ;; magit
+ ;; =============================================================================
+ (use-package magit
+-  :straight t
+   :config
+   (setq magit-push-always-verify nil)
+   (setq git-commit-summary-max-length 180))
+@@ -373,73 +349,23 @@
+ ;; )
+ 
+ (use-package slime
+-  :preface
+-  ;; Prefer the Guix-packaged SLIME over any straight checkout.
+-  (setq load-path
+-        (let (filtered)
+-          (dolist (path load-path (nreverse filtered))
+-            (unless (and path
+-                         (string-match-p
+-                          "/straight/\\(build\\|repos\\)/slime\\(?:/\\|$\\)"
+-                          path))
+-              (push path filtered)))))
+-  (defun my/guix-host-executable (program)
+-    "Return PROGRAM from PATH or common Guix profile locations."
+-    (let ((home (or (getenv "HOME") (expand-file-name "~"))))
+-      (or (executable-find program)
+-          (catch 'found
+-            (dolist (candidate
+-                     (list (expand-file-name
+-                            (concat ".guix-home/profile/bin/" program)
+-                            home)
+-                           (expand-file-name
+-                            (concat ".guix-profile/bin/" program)
+-                            home)
+-                           (concat "/run/current-system/profile/bin/" program)
+-                           (concat "/etc/profiles/per-user/"
+-                                   (user-login-name)
+-                                   "/bin/"
+-                                   program)))
+-              (when (file-executable-p candidate)
+-                (throw 'found candidate)))))))
+-  :straight nil
+-  :ensure nil
+   :commands (slime slime-selector)
+   :bind (("C-c s" . slime)
+          ("C-c C-s" . slime-selector))
+   :init
+-  (let* ((slime-library (locate-library "slime"))
+-         (slime-root (and slime-library
+-                          (file-name-directory slime-library)))
+-         (sbcl (my/guix-host-executable "sbcl")))
+-    (setq slime-contribs '(slime-repl
+-                           slime-autodoc
+-                           slime-asdf
+-                           slime-tramp
+-                           slime-indentation
+-                           slime-scratch)
+-          ;; Avoid `slime-c-p-c' here: on this host it sometimes leaves
+-          ;; Emacs calling `swank:completions' before that contrib is active.
+-          slime-completion-at-point-functions
+-          '(slime-filename-completion slime-simple-completion-at-point)
+-          slime-complete-symbol-function nil
+-          slime-repl-history-file (locate-user-emacs-file ".slime-history.eld"))
+-    (when slime-root
+-      (setq slime-path slime-root)
+-      (add-to-list 'load-path (expand-file-name "contrib" slime-root)))
+-    (when sbcl
+-      (setq inferior-lisp-program sbcl
+-            slime-default-lisp 'sbcl
+-            slime-lisp-implementations
+-            `((sbcl (,sbcl "--dynamic-space-size" "2048"))))))
++  (setq inferior-lisp-program (executable-find "sbcl")
++        slime-contribs '(slime-repl slime-autodoc slime-asdf slime-tramp
++                         slime-indentation slime-scratch)
++        slime-completion-at-point-functions
++        '(slime-filename-completion slime-simple-completion-at-point)
++        slime-complete-symbol-function nil
++        slime-repl-history-file (locate-user-emacs-file ".slime-history.eld")
++        slime-default-lisp 'sbcl
++        slime-lisp-implementations
++        `((sbcl (,inferior-lisp-program "--dynamic-space-size" "2048"))))
+   :config
+   (slime-setup slime-contribs)
+-  (add-hook 'slime-mode-hook #'slime-autodoc-mode)
+-  (unless inferior-lisp-program
+-    (display-warning
+-     'init
+-     "SLIME is enabled, but SBCL was not found in PATH or a standard Guix profile."
+-     :warning)))
++  (add-hook 'slime-mode-hook #'slime-autodoc-mode))
+ ;; org mode
+ (use-package org
+ 	:config
+@@ -457,31 +383,22 @@
+   :init
+   (setq lsp-keymap-prefix "C-c l")
+   :config
+-  (add-hook 'purescript-mode-hook #'lsp))
++  (when (executable-find "purescript-language-server")
++    (add-hook 'purescript-mode-hook #'lsp)))
+ 
+ (use-package typst-ts-mode
+-  :straight '(:type git :host codeberg :repo "meow_king/typst-ts-mode")
+   :custom
+   (typst-ts-watch-options nil)
+   (typst-ts-mode-enable-raw-blocks-highlight t)
+   :config
+   (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
+ 
+-(use-package nushell-ts-mode
+-  :straight '(:type git :host github :repo "herbertjones/nushell-ts-mode"))
++(use-package nushell-ts-mode)
+ 
+ (with-eval-after-load 'ob-rec (org-babel-do-load-languages
+ 															 'org-babel-load-languages
+ 															 '((rec . t)
+ 																 (shell . t))))
+-(with-eval-after-load 'eglot
+-  (with-eval-after-load 'typst-ts-mode
+-    (add-to-list 'eglot-server-programs
+-								 `((typst-ts-mode) .
+-									 ,(eglot-alternatives `(,typst-ts-lsp-download-path
+-																					"tinymist"
+-																					"typst-lsp"))))))
+-
+ (use-package paredit
+ 	:config
+ 	(enable-paredit-mode)
+@@ -572,8 +489,9 @@
+ (use-package s)
+ (use-package dash)
+ (use-package openclaw
+-  :straight (openclaw :type git :host github :repo "Kyvero-Vexus/openclaw.el")
+-	:ensure t
++  ;; Optional on this host: no OpenClaw gateway/package is configured.
++  :if (locate-library "openclaw")
++  :ensure nil
+   :config
+   (require 'subr-x)
+   (setq openclaw-gateway-url "ws://localhost:18789")
+@@ -583,7 +501,7 @@
+               (when (file-readable-p token-file)
+                 (with-temp-buffer
+                   (insert-file-contents token-file)
+-                  (string-trim (buffer-string)))))))))
++                  (string-trim (buffer-string))))))))
+ ;; =============================================================================
+ ;; window manager features
+ ;; =============================================================================
+@@ -613,17 +531,15 @@
+ ;; =============================================================================
+ ;; ai
+ ;; =============================================================================
+-(load-file "~/.emacs.d/ai.el")
+-(load-file "~/.emacs.d/evil.el")
+-;; guix
+-(use-package guix
+-	:straight nil
+-	:ensure nil
+-	:bind (("H-A-g" . guix)))
++(load (locate-user-emacs-file "ai.el") nil 'nomessage)
++(load (locate-user-emacs-file "evil.el") nil 'nomessage)
+ (use-package stumpwm-mode)
+ 
+ 
+ ;;; init.el ends here
+-(setq custom-file "~/emacs-custom.el")
+-
+-(load custom-file)
++(setq custom-file (expand-file-name "~/emacs-custom.el"))
++
++(load custom-file t 'nomessage)
++
++;; Personal mail uses the existing Vaultwarden account at runtime.
++(load (locate-user-emacs-file "mail.el") nil 'nomessage)
+--- a/ai.el
++++ b/ai.el
+@@ -1,33 +1,10 @@
++;;; ai.el --- AI interfaces -*- lexical-binding: t; -*-
++;; Nix supplies the module compiled for this Emacs and libvterm.
+ (use-package vterm
+-  :preface
+-  ;; Prefer the Guix-packaged vterm over an older straight checkout that tries
+-  ;; to compile in-place under ~/.emacs.d.
+-  (setq load-path
+-        (delete (expand-file-name "straight/build/vterm" user-emacs-directory)
+-                (delete (expand-file-name "straight/repos/emacs-libvterm" user-emacs-directory)
+-                        load-path)))
+-  ;; Guix installs the native module alongside the package root, but the
+-  ;; loaded `vterm.elc' does not always find it automatically.
+-  (let* ((vterm-lib (locate-library "vterm"))
+-         (vterm-root (and vterm-lib (file-name-directory vterm-lib))))
+-    (dotimes (_ 4)
+-      (setq vterm-root
+-            (and vterm-root
+-                 (file-name-directory (directory-file-name vterm-root)))))
+-    (let ((vterm-module
+-           (and vterm-root
+-                (expand-file-name
+-                 (concat "lib/vterm-module" module-file-suffix)
+-                 vterm-root))))
+-      (when (and vterm-module
+-                 (file-exists-p vterm-module)
+-                 (not (featurep 'vterm-module)))
+-        (module-load vterm-module))))
+-  :straight nil
+-  :ensure nil)
++  :commands vterm
++  :custom (vterm-always-compile-module nil))
+ 
+ (use-package ai-code
+-  :straight (:host github :repo "tninja/ai-code-interface.el")
+   :bind (("C-c a" . ai-code-menu))
+   :config
+   (ai-code-set-backend 'codex)
+@@ -42,7 +19,7 @@
+ (use-package aidermacs
+   :bind (("C-c A" . aidermacs-transient-menu))
+   :config
+-  (when-let ((key (getenv "DEEPSEEK_API_KEY")))
++  (when-let* ((key (getenv "DEEPSEEK_API_KEY")))
+   (setenv "DEEPSEEK_API_KEY" key))
+   :custom
+   (aidermacs-default-chat-mode 'architect)
+--- a/evil.el
++++ b/evil.el
+@@ -1,7 +1,9 @@
++;;; evil.el --- Modal editing -*- lexical-binding: t; -*-
+ ;; =============================================================================
+ ;; evil mode
+ ;; =============================================================================
+ (use-package evil
++  :after undo-tree
+   :init
+   (setq evil-want-integration t)
+   (setq evil-want-keybinding nil)
+@@ -17,7 +19,6 @@
+   :after evil
+   :config
+   (evil-collection-init)
+-  (setq evil-want-keybinding t)
+   (evil-set-initial-state 'eaf-mode 'emacs)
+   (evil-set-initial-state 'exwm-mode 'emacs))
+ 
+@@ -26,8 +27,11 @@
+   (global-evil-surround-mode 1))
+ 
+ (use-package undo-tree
++  :demand t
+   :config
+-  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
++  (let ((directory (locate-user-emacs-file "undo/")))
++    (make-directory directory t)
++    (setq undo-tree-history-directory-alist `(("." . ,directory))))
+   (global-undo-tree-mode))
+ 
+ ;; =============================================================================
