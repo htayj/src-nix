@@ -50,8 +50,12 @@
       "sha256": "8f4b17c9ad854277f92585d9e472927541ac343a1f69c2b56bc5fceb7f171607"
     }
   ],
+  "localChanges": {
+    "2026-11-05": "Added an End+PgDn chord (150ms, either press order) toggling manna-cadet/game base layers. The game layer removes home-row tap-hold modifiers, preserves Space/RAlt and other thumb mappings, maps Delete to LCtrl and Home to LAlt, and retains the individual End/PgDn function-layer holds. File hashes above describe the original capture, before this local change.",
+    "2026-11-13": "In the game layer, map the physical left Ctrl key above the thumb Control key (Delete) to LAlt, and the inner hotkeys to the right of T and G (k18/k19) to Y and H, respectively. The normal manna-cadet and fun layers are unchanged."
+  },
   "runtimeAdaptation": {
-    "profileChanges": "Only insert linux-continue-if-no-devs-found yes immediately after defcfg in generated immutable runtime copies. Vendored profiles remain unchanged.",
+    "profileChanges": "Only insert linux-continue-if-no-devs-found yes immediately after defcfg in generated immutable runtime copies. Runtime generation leaves the source profiles unchanged; subsequent source edits are recorded in localChanges.",
     "reason": "Native Kanata hotplug waiting supports absent physical devices on the installer/VM without intercepting unrelated keyboards or blocking desktop login. Syntax errors remain fatal in generated-config checkPhase and service startup.",
     "services": ["kanata-advantage360.service", "kanata-footswitches.service"],
     "permissions": "NixOS services.kanata native hardened DynamicUser with input/uinput supplementary groups and device allow rules. No added tay input/uinput membership or broad chmod rules.",

@@ -241,8 +241,8 @@ set; `system.stateVersion` should remain `26.05`.
 
 ## Manna-cadet keyboard
 
-The maps were copied from `~/projects/nixos-basedbox/assets/manna-cadet` without
-rewriting them. Their origin is recorded in
+The maps were initially copied from `~/projects/nixos-basedbox/assets/manna-cadet`.
+Their origin and subsequent local changes are recorded in
 `assets/manna-cadet/provenance.json`.
 
 Two Kanata services are enabled:
@@ -251,12 +251,22 @@ Two Kanata services are enabled:
 - `kanata-footswitches` matches devices named `PCsensor FootSwitch Keyboard`.
 
 They tolerate missing/hot-plugged hardware and restart on unexpected failure.
-The captured Advantage360 profile is preserved in `assets`: hold-S and hold-L
+The Advantage360 profile is kept in `assets`: in normal mode, hold-S and hold-L
 emit `LALT`, the thumb holds emit `RALT`, and hold-D and hold-K emit Control. At
 build time the module makes LALT conventional application Alt/Mod1 (and thus
 Emacs Meta), while RALT becomes the dedicated Mod3 compositor modifier. RALT is
 therefore Super-like without being literal Super; Hyprland binds its
 window-management actions to Mod3 only.
+
+Press **End + Page Down** together (within 150 ms) to toggle the gaming layer;
+press the same chord again to return to manna-cadet. Gaming disables the home-row
+tap-hold modifiers, keeps **Space** as Space on tap / RAlt (Mod3) on hold, and maps
+**Delete** to left Ctrl and **Home** to left Alt. The key labeled **Ctrl** above
+the thumb Ctrl also sends left Alt in game mode. The inner hotkeys directly to
+the right of **T** and **G** send **Y** and **H**, respectively. Other mappings
+are preserved, including holding End or Page Down alone for the function layer.
+Kanata starts in the normal manna-cadet layer after a service restart.
+
 Inspect them with:
 
 ```sh

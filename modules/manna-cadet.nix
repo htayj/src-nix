@@ -28,7 +28,7 @@ let
     '';
   };
 
-  # Preserve the captured maps. The runtime-only setting makes absent USB
+  # Render the configured maps. The runtime-only setting makes absent USB
   # devices harmless at boot while still checking the mapping during build.
   runtimeConfig = name: source: replacements: pkgs.writeTextFile {
     name = "manna-cadet-${name}.kbd";

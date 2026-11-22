@@ -14,6 +14,15 @@
 (defsrc
   a ' b \ bspc c lshift rshift , lalt d del rmet down e end esc f g grv lctl h home k18 k19 k20 k21 i j k l left [ m caps n 0 1 2 3 4 5 6 7 8 9 = - o p pgup . pgdn q r ent right ] s ; / spc t tab rctl u up v w x y z)
 
+;; Press End + PgDn together to enter or leave the gaming base layer.
+;; Check the base layer so the toggle also works while fun is held.
+(defchordsv2
+  (end pgdn) (switch
+    ((base-layer game)) (layer-switch manna-cadet) break
+    () (layer-switch game) break
+  ) 150 all-released ()
+)
+
 (defalias
   cd (tap-hold-release 200 200 d lctl)
   ck (tap-hold-release 200 200 k lctl)
@@ -35,6 +44,13 @@
 
 (deflayer manna-cadet
   @sa @qoam b \ @hro c lshift rshift , lalt @cd @gdel rmet down e @hscl @eoam @sf g grv (arbitrary-code 85) h home f18 f19 f20 f21 i @sj @ck @ml left [ m caps n 0 1 2 3 4 5 6 7 8 9 = - o p pgup . @hscr q r @rtop right ] @ms @ssemi / @hsp t tab (arbitrary-code 84) u up v w x y z)
+
+;; Plain home-row keys; Space and the other thumb tap-holds stay available.
+;; Delete and Home are dedicated Control and Alt keys in this layer.
+;; The key labeled Ctrl above the thumb Control key also sends left Alt.
+;; The inner hotkeys to the right of T and G send Y and H, respectively.
+(deflayer game
+  a ' b \ @hro c lshift rshift , lalt d lctl rmet down e @hscl @eoam f g grv lalt h lalt y h f20 f21 i j k l left [ m caps n 0 1 2 3 4 5 6 7 8 9 = - o p pgup . @hscr q r @rtop right ] s ; / @hsp t tab (arbitrary-code 84) u up v w x y z)
 
 
 (deflayer fun
