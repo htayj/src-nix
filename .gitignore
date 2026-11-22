@@ -12,3 +12,6 @@ gpg-recovery-*/
 *.pem
 *.p12
 *.pfx
+
+# Python bytecode from running scripts and tests.
+__pycache__/
