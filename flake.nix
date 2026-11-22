@@ -4,12 +4,20 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   # Keep Autolith's own nixpkgs pin: its SBCL and Lisp package set must match.
   inputs.autolith.url = "github:htayj/autolith";
+  inputs.emacs-config = {
+    url = "git+https://github.com/htayj/emacs.d.git?ref=new";
+    flake = false;
+  };
+  inputs.nix-channel = {
+    url = "git+https://forge.nogroup.group/tay/nix-channel.git";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
   inputs.home-manager = {
     url = "github:nix-community/home-manager";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, autolith, home-manager, ... }:
+  outputs = { self, nixpkgs, autolith, emacs-config, nix-channel, home-manager, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; config.allowUnfree = true; };
@@ -26,7 +34,7 @@
     packages.x86_64-linux.home-manager = home-manager.packages.${system}.default;
     homeConfigurations.tay = home-manager.lib.homeManagerConfiguration {
       inherit pkgs;
-      extraSpecialArgs = { inherit autolith; };
+      extraSpecialArgs = { inherit autolith emacs-config nix-channel; };
       modules = [ ./home/tay.nix ];
     };
     devShells.${system}.default = pkgs.mkShell {

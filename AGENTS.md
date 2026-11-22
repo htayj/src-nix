@@ -7,6 +7,9 @@
 - Keep Bridge source in `/home/taylor/projects/bridge` and the Claude plugin
   marketplace in `/home/taylor/claude-plugin-marketplace`, outside this repo.
   Nix may declare runtimes/services referencing those paths, not vendor their code.
+- When a needed package is unavailable in Nixpkgs, package it in
+  `/home/taylor/projects/nix-channel` and consume it here through the channel.
+  Keep reusable package definitions there rather than in this configuration repo.
 - Never copy private keys, passphrases, tokens, or recovery material into this
   repository or Nix expressions. Do not print those values. Nix source is not secret.
 - Run `scripts/check-secrets` before any build/commit when new content is added;

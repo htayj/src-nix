@@ -7,11 +7,31 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1792611842,
-        "narHash": "sha256-wf4cEJBCstqBJMFzCt1qfn9/R0h9W+dCDc5oicwvlo8=",
+        "lastModified": 1795005770,
+        "narHash": "sha256-Dkw+a64cFzHQ6FE76NI2Gte4pGphiLVwLjDsmfhYbkU=",
         "owner": "htayj",
         "repo": "autolith",
-        "rev": "41fd881ea5ff7f1699aa3bd810c9340d6cd032ac",
+        "rev": "532da3e068829eade070055417cc0534374f99d4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "htayj",
+        "repo": "autolith",
+        "type": "github"
+      }
+    },
+    "autolith_2": {
+      "inputs": {
+        "crane": "crane_2",
+        "flake-parts": "flake-parts_2",
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1792924500,
+        "narHash": "sha256-x2AbzXolxQ8PW+39VIVgc1X0vbzv7SMMQv+nm0vbFbY=",
+        "owner": "htayj",
+        "repo": "autolith",
+        "rev": "bdbe4aa92995891cac118f25b2b630375d881e50",
         "type": "github"
       },
       "original": {
@@ -35,9 +55,63 @@
         "type": "github"
       }
     },
+    "crane_2": {
+      "locked": {
+        "lastModified": 1791754810,
+        "narHash": "sha256-cN0Mgk+sQtCJcGWs9H4M0CnLRAuC4I8aCwiBTcBJs6E=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "bd63bf1d0a0f6dcacd7549c714a671ee63b0db6a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "emacs-config": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781119070,
+        "narHash": "sha256-jrHS57QCkJPtUIH88tU+zoFNQIoVRZVXLliZUkJ+7/U=",
+        "ref": "new",
+        "rev": "459eb5cacbf457866333f05e76d23170b7dc92e1",
+        "revCount": 9,
+        "type": "git",
+        "url": "https://github.com/htayj/emacs.d.git"
+      },
+      "original": {
+        "ref": "new",
+        "type": "git",
+        "url": "https://github.com/htayj/emacs.d.git"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
+          "autolith",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782949081,
+        "narHash": "sha256-vp6Y/Grm98ESt6ceOkWiHWyZRDV3J1RID4w+6NWK9yA=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "17c9d6cdfc60c64f4ee8d306f9bc0b4ccb51481e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_2": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "nix-channel",
           "autolith",
           "nixpkgs"
         ]
@@ -76,6 +150,50 @@
         "type": "github"
       }
     },
+    "m3shapes": {
+      "inputs": {
+        "nixpkgs": [
+          "nix-channel",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787906858,
+        "narHash": "sha256-YZelgEZflFNwGutX4/tIzBdbOeghJgE2oDw0uWYGxns=",
+        "owner": "soramanew",
+        "repo": "m3shapes",
+        "rev": "32ad9ce328bb77ed349b40a3be10ee9ea610b8ab",
+        "type": "github"
+      },
+      "original": {
+        "owner": "soramanew",
+        "repo": "m3shapes",
+        "rev": "32ad9ce328bb77ed349b40a3be10ee9ea610b8ab",
+        "type": "github"
+      }
+    },
+    "nix-channel": {
+      "inputs": {
+        "autolith": "autolith_2",
+        "m3shapes": "m3shapes",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794156940,
+        "narHash": "sha256-KQbpvXKsFzjLL82OkTgzuETN9ncdk0ilbnfHeF5Xkuw=",
+        "ref": "refs/heads/main",
+        "rev": "f12d9da002db4b03ebff4d839fca752a484a18da",
+        "revCount": 131,
+        "type": "git",
+        "url": "https://forge.nogroup.group/tay/nix-channel.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://forge.nogroup.group/tay/nix-channel.git"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1786348146,
@@ -94,6 +212,22 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 1786348146,
+        "narHash": "sha256-we5zDEFfn8TgzeWKjKDMIjeQZ59omEPl23NIF+13/ys=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d482ef84049d9b7276b83a06e4e4d76983830097",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d482ef84049d9b7276b83a06e4e4d76983830097",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1792773339,
         "narHash": "sha256-rZLrzrC6i+jnTAlvPZHogKDulY7WWDEv9hJeHieO7Zw=",
         "owner": "NixOS",
@@ -111,8 +245,10 @@
     "root": {
       "inputs": {
         "autolith": "autolith",
+        "emacs-config": "emacs-config",
         "home-manager": "home-manager",
-        "nixpkgs": "nixpkgs_2"
+        "nix-channel": "nix-channel",
+        "nixpkgs": "nixpkgs_3"
       }
     }
   },
