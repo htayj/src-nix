@@ -1,4 +1,4 @@
-{ config, lib, pkgs, autolith, ... }:
+{ config, lib, pkgs, autolith, nix-channel, ... }:
 {
   imports = [ ./hyprland.nix ./noctalia.nix ./tmux.nix ./theme.nix ./workflow.nix ./forgejo.nix ./bridge.nix ./autolith.nix ./gaming.nix ./telemetry.nix ./agent-memory.nix ./syncthing.nix ./emacs.nix ./openclaw.nix ];
   home.username = "tay";
@@ -8,6 +8,24 @@
   xdg.configFile."nyxt/config.lisp".source = ./nyxt.lisp;
   xdg.configFile."nyxt/page-keys.js".source = ./nyxt-page-keys.js;
   xdg.configFile."nyxt/karakeep.lisp".source = ./nyxt-karakeep.lisp;
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "x-scheme-handler/codex" = [ "chatgpt.desktop" ];
+      "x-scheme-handler/claude-cli" = [ "claude-code-url-handler.desktop" ];
+      "text/html" = [ "firefox.desktop" ];
+      "application/xhtml+xml" = [ "firefox.desktop" ];
+      "x-scheme-handler/http" = [ "firefox.desktop" ];
+      "x-scheme-handler/https" = [ "firefox.desktop" ];
+    };
+  };
+  home.sessionVariables.BROWSER = "firefox";
+  xdg.configFile."Element/config.json".text = builtins.toJSON {
+    default_server_config."m.homeserver" = {
+      base_url = "https://matrix.vexillomancy.org";
+      server_name = "vexillomancy.org";
+    };
+  };
   programs.home-manager.enable = true;
   programs.bash.enable = true;
   # The desktop app shares config.toml with the CLI, but its browser transports
@@ -19,8 +37,14 @@
     "-c 'plugins.codex-app-tools@openai-bundled.enabled=false'"
     "-c 'mcp_servers.node_repl.enabled=false'"
   ];
+  programs.bash.shellAliases.lispterm-test = "/home/taylor/lispterm-test/bin/lispterm";
+  # Share GnuPG's keyring and graphical passphrase prompt with Kleopatra and Thunderbird.
+  home.file.".gnupg/gpg-agent.conf".text = ''
+    pinentry-program ${lib.getExe pkgs.pinentry-qt}
+  '';
   programs.rbw = {
     enable = true;
+    package = nix-channel.packages.${pkgs.stdenv.hostPlatform.system}.rbw-vaultwarden;
     settings = {
       base_url = "https://vault.nogroup.group";
       email = "hardy.taylor.j@gmail.com";
@@ -41,6 +65,7 @@
   home.file.".agent-browser/config.json".text = builtins.toJSON {
     executablePath = lib.getExe pkgs.chromium;
   };
+  fonts.fontconfig.enable = true;
   home.packages = with pkgs; [
     freetube
     (jellyfin-desktop.overrideAttrs (old: {
@@ -60,12 +85,35 @@
     '')
     chromium
     agent-browser
+    thunderbird
+    (pkgs.symlinkJoin {
+      name = "element-desktop-with-kwallet";
+      paths = [ pkgs.element-desktop ];
+      nativeBuildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram "$out/bin/element-desktop" --add-flags "--password-store=kwallet6"
+      '';
+    })
+    # Keep the restored Signal profile on its KWallet6 encryption backend.
+    (pkgs.symlinkJoin {
+      name = "signal-desktop-with-kwallet";
+      paths = [ pkgs.signal-desktop ];
+      nativeBuildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram "$out/bin/signal-desktop" --add-flags "--password-store=kwallet6"
+      '';
+    })
+    kdePackages.kleopatra
     nyxt
     (pkgs.writeShellApplication {
       name = "nyxt-karakeep";
       runtimeInputs = [ config.programs.rbw.package ];
       text = ''exec ${pkgs.python3}/bin/python3 ${./nyxt-karakeep.py} "$@"'';
     })
+    chatgpt
+    gossip
+    buzz-cli
+    nix-channel.packages.${pkgs.stdenv.hostPlatform.system}.buzz-desktop
     # Runtimes for the Claude plugins and hooks imported from work.
     nodejs
     uv
@@ -76,7 +124,11 @@
     forgejo-cli
     herdr
     gitleaks
+    htop
+    glances
     fastfetch
+    nix-channel.packages.${pkgs.stdenv.hostPlatform.system}.genera-fonts-latin
+    nix-channel.packages.${pkgs.stdenv.hostPlatform.system}.genera-fonts-symbols
     autolith.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 }
