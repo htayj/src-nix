@@ -5,6 +5,9 @@
   home.homeDirectory = "/home/taylor";
   home.stateVersion = "26.05";
   xdg.enable = true;
+  xdg.configFile."nyxt/config.lisp".source = ./nyxt.lisp;
+  xdg.configFile."nyxt/page-keys.js".source = ./nyxt-page-keys.js;
+  xdg.configFile."nyxt/karakeep.lisp".source = ./nyxt-karakeep.lisp;
   programs.home-manager.enable = true;
   programs.bash.enable = true;
   programs.rbw = {
@@ -29,6 +32,12 @@
       }) ];
     }))
     claude-code
+    nyxt
+    (pkgs.writeShellApplication {
+      name = "nyxt-karakeep";
+      runtimeInputs = [ config.programs.rbw.package ];
+      text = ''exec ${pkgs.python3}/bin/python3 ${./nyxt-karakeep.py} "$@"'';
+    })
     # Runtimes for the Claude plugins and hooks imported from work.
     nodejs
     uv

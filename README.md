@@ -521,6 +521,30 @@ Run `rbw login` locally and enter your master password in the pinentry dialog.
 Use `rbw sync` to refresh, `rbw unlock` when needed, and `rbw lock` to lock
 immediately. Never paste vault entries into chat, build logs, or Git.
 
+Nyxt uses this same account through the `rbw` adapter in `home/nyxt.lisp`.
+After restarting Nyxt, run `M-x copy-password` or `M-x copy-username`, select
+an entry, and paste into the login form. Unlocking uses the existing pinentry
+dialog. Both commands clear the clipboard after 15 seconds if it still contains
+the copied value. Use `M-x save-new-password` to create a login: enter its name,
+password and username. Leave the password blank to generate a 24-character
+password, then retrieve it with `copy-password`. The current HTTP(S) site's
+origin is saved with the entry; URL credentials, paths, queries and fragments
+are excluded. Saving creates a new entry rather than updating an existing one.
+Passwords go to `rbw` through stdin, and generated passwords are not logged.
+Use Vaultwarden or `rbw` to edit entries, and `rbw sync` to refresh them.
+Nyxt's default search engine is Google; the `google` search shortcut also works.
+`f` and `F` use label-only hints for visible elements: type the displayed label
+to follow immediately, without fuzzy completion or pressing Return. `f` follows
+in the current buffer; `F` opens links in background buffers. Hinting uses a
+compact input line instead of the completion list. Form fields still accept
+normal typing.
+Press Space before typing a hint label (`f SPC` or `F SPC`) to open the original
+whole-page fuzzy selector for that invocation. Then type link text and press
+Return to follow it. The next `f` or `F` starts with direct labels again.
+`C-x C-b` opens the buffer switcher with the most recently visited other buffer
+first and the current buffer last. `C-x C-b RET` toggles between the last two
+buffers; typing still filters the list normally.
+
 ### WebKitGTK renderer memory protection
 
 `modules/webkit-oom.nix` runs a small system service that checks every two
@@ -653,6 +677,49 @@ Changing PipeWire's unit overrides restarts audio on `rbs`, and WirePlumber
 may then fall back to a different default output; reselect it with
 `wpctl set-default`. The tmpfs `/tmp` is applied at boot; switching it live
 would hide the tmux and X11 sockets of running sessions.
+
+### Nyxt and Karakeep
+
+Nyxt connects to `https://horde.nogroup.group` using the `nyxt-karakeep`
+helper and the commands in `home/nyxt-karakeep.lisp`. Restart Nyxt after `rbh`.
+
+| Emacs binding | Command | Action |
+| --- | --- | --- |
+| `C-c k s` | `karakeep-save` | Save this page; optionally enter tags and choose a list |
+| `C-c k h` | `karakeep-save-hint` | Save links selected with hints |
+| `C-c k o` | `karakeep-search` | Search saved content and open original URLs |
+| `C-c k r` | `karakeep-read` | Search and open saved Reader Views |
+| `C-c k b` | `karakeep-library` | Open the web library |
+
+All commands are also available through `M-x`. Search first asks for a server
+query (blank lists recent bookmarks), then offers native completion over the
+first 100 results, matching titles, URLs and tags. Narrow the server query for
+older/more results. Selected results support the alternate original/reader
+view action. Native local bookmarks and their bindings remain available;
+there is no automatic synchronization or authenticated-page capture.
+
+Saving a page or hinted link asks for comma-separated tags, then a list.
+Type a list name such as `GitHub Stars` and press Return to select it, or
+press Return on the initial `No list (save only)` choice to skip list assignment.
+Only manual lists you own or can edit are offered; smart lists manage membership
+through their search rules. Nested lists show their parent path. Canceling either
+prompt cancels the save. Existing bookmarks can be saved again to add a list;
+their other list memberships are preserved.
+
+The helper reads the password field of the Vaultwarden item `Karakeep Nyxt API`
+at runtime through `rbw`. Its dedicated API key needs only
+`bookmarks:readwrite`, `tags:readwrite`, and `lists:readwrite`. Credentials are kept out of Nix,
+command arguments, logs and Lisp. API requests use the fixed HTTPS origin and
+refuse redirects. Unlock/sync `rbw` if authentication fails. Reader Views use
+the web session: sign in once with the existing `Karakeep` login in Vaultwarden.
+Extraction runs asynchronously on the server. Saving an existing URL reuses it
+and adds tags without replacing existing tags.
+
+Intentional keymap overrides muffle only `override-existing-binding` warnings.
+Nyxt 3.12's navigation handler otherwise promotes those warnings to fatal errors
+when middle-click creates a new buffer. Regression checks:
+`nyxt --script scripts/test-nyxt-keymaps.lisp` and
+`python scripts/test-nyxt-karakeep.py`.
 
 ## Claude Code and Bridge
 
