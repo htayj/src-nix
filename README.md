@@ -101,6 +101,45 @@ nix build path:.#nixosConfigurations.nixos.config.system.build.toplevel --out-li
 nix flake check path:.
 ```
 
+## OpenClaw desktop
+
+Launch **OpenClaw** from the application menu or run `openclaw-desktop`.
+`home/openclaw.nix` installs the companion from the package channel and keeps
+`openclaw-cluster-tunnel.service` connected over SSH to `tay@basedserv`. The
+loopback endpoint `127.0.0.1:18789` forwards to the existing cluster Gateway
+at `192.168.7.131:18789`. This works with Tailscale DNS disabled
+and retains Gateway authentication and device pairing.
+
+The saved **Cluster OpenClaw** connection lives in KWallet. Primary's remote
+settings live in the mutable `~/.openclaw/openclaw.json`, referencing a private
+credential file outside the repository and Nix store. No local Gateway service
+is installed. Apply package or tunnel changes with `rbh`.
+
+Personal Firefox exports for Chryso use the fixed profile
+`/home/taylor/.config/mozilla/firefox/w9bnonqd.default`. Home Manager installs
+`~/.local/share/openclaw-node/firefox-personal-export.py`; the existing desktop
+node's mutable `nodeHost.mcp.servers.firefox-personal` entry runs it with `--mcp`.
+Its `manifest`, `read_records` and on-demand `refresh` tools expose only history
+and bookmark snapshots under `~/.local/share/openclaw-node/firefox-export/`.
+Each private snapshot contains `history.jsonl`, `bookmarks.jsonl` and a manifest
+with source provenance, date coverage, counts and SHA-256 hashes. Reads pin the
+manifest's snapshot ID and paginate by dataset and offset. Export directories
+are mode 0700 and files are mode 0600. Browser-profile file access and node shell
+permissions are not expanded; Chrome, host `work`, credentials and other profile
+data are excluded. The exporter rejects a different host, profile or source alias.
+Before publication, Gitleaks scans the allowlisted records using its default
+rules, omits entire flagged records, and verifies the remaining export is clean.
+Scanner failures prevent publication; manifests record omitted counts.
+
+The export uses SQLite's read-only online backup API and retains exact URL plus
+integer-microsecond visit identities. Firefox's exclusive lock can prevent live
+backup; refresh retries within a bounded interval and reports busy, without
+closing Firefox automatically. Taylor authorized closing Firefox once for the
+initial historical snapshot on 2026-11-09. No ongoing collection is scheduled.
+Snapshots persist until owner deletion, independently of later Firefox deletion;
+sync origin and phone-history completeness remain unverified. Chryso's access
+and import handoff is in its workspace `digital-activity/firefox/README.md`.
+
 ## Emacs
 
 Home Manager installs Wayland-native Emacs with the `new` branch of
