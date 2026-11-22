@@ -863,6 +863,20 @@ To build it without switching the system:
 nix build path:/home/taylor/src#autolith --out-link result-autolith
 ```
 
+For local development, run `autolith-dev` after `rbh`. It loads
+`/home/taylor/projects/autolith` from source on every launch, including
+uncommitted edits, with the installed fork's pinned Nix runtime and dependencies.
+It keeps the caller's working directory. Relaunch it after source edits;
+dependency or SBCL changes require refreshing the fork input and running `rbh`.
+Plain `autolith` continues to use the GitHub-pinned package.
+
+Home Manager also installs Autolith's `local-development` skill, which explains
+the source/installed distinction and conversation handoff. To switch, save a
+handoff and the conversation ID, stop active jobs, exit normally, then run
+`autolith-dev resume` (or `autolith resume`) from the same workspace and select
+that conversation. To promote tested edits, push the fork, update the input as
+above, run `scripts/check-secrets`, and run `rbh`. Restart the session afterward.
+
 ### Local telemetry
 
 Run `rbh` to install the Tempo and Grafana user services from

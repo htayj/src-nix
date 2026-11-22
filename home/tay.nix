@@ -1,6 +1,6 @@
 { config, pkgs, autolith, ... }:
 {
-  imports = [ ./hyprland.nix ./noctalia.nix ./tmux.nix ./theme.nix ./workflow.nix ./forgejo.nix ./bridge.nix ./gaming.nix ./telemetry.nix ./agent-memory.nix ./syncthing.nix ./emacs.nix ./openclaw.nix ];
+  imports = [ ./hyprland.nix ./noctalia.nix ./tmux.nix ./theme.nix ./workflow.nix ./forgejo.nix ./bridge.nix ./autolith.nix ./gaming.nix ./telemetry.nix ./agent-memory.nix ./syncthing.nix ./emacs.nix ./openclaw.nix ];
   home.username = "tay";
   home.homeDirectory = "/home/taylor";
   home.stateVersion = "26.05";
