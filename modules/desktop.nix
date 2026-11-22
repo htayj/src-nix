@@ -33,6 +33,10 @@ in
     after = [ "graphical-session-pre.target" ];
   };
   hardware.graphics.enable = true;
+  programs.steam = {
+    enable = true;
+    extraCompatPackages = [ pkgs.proton-ge-bin ];
+  };
   security.rtkit.enable = true;
 
   # Logitech device settings and button rules for the MX Master mouse.
